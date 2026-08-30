@@ -7,7 +7,6 @@ import {
   ViewStyle,
   TextStyle,
   ActivityIndicator,
-  Platform,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -63,7 +62,7 @@ export function PrimaryButton({
       style={({ pressed }) => [
         styles.primaryBtn,
         (disabled || loading) && { opacity: 0.5 },
-        pressed && { opacity: 0.85 },
+        pressed && { opacity: 0.9, transform: [{ scale: 0.985 }] },
         style,
       ]}
     >
@@ -97,7 +96,7 @@ export function SecondaryButton({
       style={({ pressed }) => [
         styles.secondaryBtn,
         { borderColor: c },
-        pressed && { opacity: 0.6 },
+        pressed && { opacity: 0.6, transform: [{ scale: 0.985 }] },
         style,
       ]}
     >

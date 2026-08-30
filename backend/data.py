@@ -215,51 +215,51 @@ DNA_PROFILES = {
     "quiet_architect": {
         "id": "quiet_architect",
         "name": "THE QUIET ARCHITECT",
-        "description": "You gravitate toward tactile materials, restrained palettes and unexpected detail.",
+        "description": "You gravitate toward restrained forms, tactile surfaces and details that reveal themselves slowly.",
         "palette": "Monochrome & Stone",
         "silhouette": "Structured",
         "craft_affinity": "Geometric quilting",
-        "tags": ["Restrained", "Tactile", "Architectural", "Considered"],
+        "tags": ["Minimal", "Architectural", "Tactile", "Quiet", "Contemporary"],
         "recommendations": ["j01", "j04", "j07"],
     },
     "modern_romantic": {
         "id": "modern_romantic",
         "name": "THE MODERN ROMANTIC",
-        "description": "You are drawn to softness, fluid lines and craft that feels like a quiet poem.",
+        "description": "You are drawn to softness, fluid lines and craft that feels like a quiet poem worn close to the skin.",
         "palette": "Soft & Sand",
         "silhouette": "Fluid",
         "craft_affinity": "Organic quilting",
-        "tags": ["Soft", "Fluid", "Warm", "Intimate"],
+        "tags": ["Soft", "Fluid", "Warm", "Romantic", "Intimate"],
         "recommendations": ["j03", "j06", "j09"],
     },
     "bold_minimalist": {
         "id": "bold_minimalist",
         "name": "THE BOLD MINIMALIST",
-        "description": "You want presence without noise — clean volume, deep colour, zero clutter.",
+        "description": "You want presence without noise — clean volume, deep colour and zero clutter.",
         "palette": "Indigo & Ink",
         "silhouette": "Oversized",
         "craft_affinity": "Abstract quilting",
-        "tags": ["Confident", "Clean", "Graphic", "Modern"],
+        "tags": ["Bold", "Clean", "Graphic", "Confident", "Modern"],
         "recommendations": ["j02", "j05", "j08"],
     },
     "raw_purist": {
         "id": "raw_purist",
         "name": "THE RAW PURIST",
-        "description": "You love honest materials, visible making and the beauty of the unfinished.",
+        "description": "You love honest materials, visible making and the quiet beauty of the unfinished.",
         "palette": "Earth & Indigo",
         "silhouette": "Relaxed",
         "craft_affinity": "Patchwork",
-        "tags": ["Honest", "Earthy", "Handmade", "Grounded"],
+        "tags": ["Honest", "Earthy", "Handmade", "Raw", "Grounded"],
         "recommendations": ["j04", "j10", "j11"],
     },
     "experimental_voice": {
         "id": "experimental_voice",
         "name": "THE EXPERIMENTAL VOICE",
-        "description": "You treat clothing as a canvas — craft loud, colour unexpected, rules optional.",
+        "description": "You treat clothing as a canvas — craft loud, colour unexpected and rules entirely optional.",
         "palette": "Jewel & Experimental",
         "silhouette": "Cropped",
         "craft_affinity": "Statement craft",
-        "tags": ["Expressive", "Fearless", "Artful", "Unexpected"],
+        "tags": ["Expressive", "Artful", "Fearless", "Unexpected", "Experimental"],
         "recommendations": ["j08", "j11", "j12"],
     },
 }
@@ -293,6 +293,15 @@ _DNA_WEIGHTS = {
 }
 
 
+def _recommendation_reason(profile: dict, jacket: dict) -> str:
+    """Deterministic 'AI' explanation linking the profile to an approved jacket."""
+    return (
+        f"Its {jacket['silhouette'].lower()} cut in {jacket['colour'].lower()} speaks to your "
+        f"{profile['palette'].lower()} palette, and the {jacket['quilt'].lower()} quilting reflects your "
+        f"affinity for {profile['craft_affinity'].lower()}."
+    )
+
+
 def compute_dna(answers: dict) -> dict:
     scores = {k: 0 for k in DNA_PROFILES}
     for q, ans in answers.items():
@@ -302,7 +311,11 @@ def compute_dna(answers: dict) -> dict:
     # deterministic tie-break by profile declaration order
     best = max(DNA_PROFILES, key=lambda p: (scores[p], -list(DNA_PROFILES).index(p)))
     profile = dict(DNA_PROFILES[best])
-    profile["recommended_jackets"] = [j for j in JACKETS if j["id"] in profile["recommendations"]]
+    recs = []
+    for j in JACKETS:
+        if j["id"] in profile["recommendations"]:
+            recs.append({**j, "reason": _recommendation_reason(profile, j)})
+    profile["recommended_jackets"] = recs
     return profile
 
 

@@ -123,7 +123,14 @@ class TestDna:
         d = r.json()
         assert "name" in d and "palette" in d and "silhouette" in d
         assert "craft_affinity" in d and "tags" in d
+        # Iteration 2: exactly 5 style attribute tags
+        assert len(d["tags"]) == 5, f"expected 5 tags, got {len(d['tags'])}: {d['tags']}"
+        assert all(isinstance(t, str) and t.strip() for t in d["tags"])
         assert len(d["recommended_jackets"]) == 3
+        # Iteration 2: each recommendation includes a non-empty deterministic 'reason'
+        for rec in d["recommended_jackets"]:
+            assert "reason" in rec, f"missing reason on rec {rec.get('id')}"
+            assert isinstance(rec["reason"], str) and len(rec["reason"].strip()) > 10
         assert d["id"] == "quiet_architect"
 
     def test_result_second_profile(self, client):

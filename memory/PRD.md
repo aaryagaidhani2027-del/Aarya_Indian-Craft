@@ -46,6 +46,20 @@ UNDERSTAND → BUY. Hackathon MVP — a spectacular working golden path over bre
   from `/api/media/{name}`. Visualise screen now calls it live (with graceful fallback to the framed photo
   on failure). Verified producing a correct on-body indigo geometric bomber. (`server.py`, `visualise.tsx`)
 
+## Refinement pass (2026-06, iteration 3) — verified by testing agent (18/18 backend, full golden path)
+- P1 Landing: cinematic Ken Burns slow-zoom loop, gentle crossfade between hero_male/hero_female,
+  one-shot headline entrance, restrained scroll parallax, button press micro-interactions. No gradients/flash.
+- P2 Design DNA: immersive editorial redesign — cinematic banner image per question with serif title
+  overlaid + large option cards; new "Analysing your design DNA" progress transition before the result.
+  Result screen shows 5 style attributes (e.g. Minimal / Architectural / Tactile / Quiet / Contemporary).
+- P3 AI Recommendation: "AI TRANSLATED YOUR TASTE" layer — deterministic reasoning links the structured
+  DNA profile to 3 approved catalogue jackets, each with a short explanation (`data._recommendation_reason`).
+- P4 Atelier: prominent MADE-ABILITY score + supporting copy ("Your design fits our current craft…"),
+  live dual price + meter, LET AI FIX IT on conflicts.
+- P5 Product Passport / Craft Story: kept, editorial, with LISTEN TO THE STORY ElevenLabs audio.
+- P6 Checkout + full golden path (Landing→DNA→Result→Recommendation→Product→Atelier→Price→Made-ability→
+  Craft Story→Checkout) verified end-to-end with no regressions.
+
 ## Backlog / not built (intentional per brief)
 - P2: auth, admin, artisan onboarding, logistics, real payments, full marketplace, social — out of scope.
 - Polish: Cormorant web font OTS fallback (web-only; loads on native).

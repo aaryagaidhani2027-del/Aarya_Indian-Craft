@@ -167,6 +167,11 @@ export default function Atelier() {
               ]}
             />
           </View>
+          <Text style={styles.meterCopy} testID="madeability-copy">
+            {made && !made.makeable
+              ? "This combination pushes past our current craft capabilities."
+              : "Your design fits our current craft and production capabilities."}
+          </Text>
         </View>
       </View>
 
@@ -341,11 +346,12 @@ const styles = StyleSheet.create({
   },
   monogramText: { fontFamily: fonts.displayMedium, fontSize: 22, color: colors.onSurfaceInverse },
   meterWrap: { padding: spacing.lg },
-  meterHeader: { flexDirection: "row", justifyContent: "space-between", marginBottom: spacing.sm },
-  meterLabel: { fontFamily: fonts.sansMedium, fontSize: 11, letterSpacing: 2, color: "rgba(251,251,249,0.8)" },
-  meterScore: { fontFamily: fonts.sansBold, fontSize: 13, letterSpacing: 1 },
+  meterHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", marginBottom: spacing.sm },
+  meterLabel: { fontFamily: fonts.sansMedium, fontSize: 12, letterSpacing: 2.5, color: "rgba(251,251,249,0.9)" },
+  meterScore: { fontFamily: fonts.sansBold, fontSize: 24, letterSpacing: 0.5 },
   meterTrack: { height: 2, backgroundColor: "rgba(251,251,249,0.25)" },
   meterFill: { height: 2 },
+  meterCopy: { fontFamily: fonts.sans, fontSize: 12, lineHeight: 17, color: "rgba(251,251,249,0.8)", marginTop: spacing.sm },
   panel: { flex: 1, backgroundColor: colors.surface },
   catRow: { flexGrow: 0, borderBottomWidth: 1, borderBottomColor: colors.divider },
   catContent: { paddingHorizontal: spacing.lg, gap: spacing.xl, alignItems: "center", height: 52 },

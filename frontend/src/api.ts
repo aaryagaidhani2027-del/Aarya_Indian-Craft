@@ -44,6 +44,7 @@ export type Jacket = {
   material: string;
   craft: string;
   description: string;
+  reason?: string;
 };
 
 export type Selection = {

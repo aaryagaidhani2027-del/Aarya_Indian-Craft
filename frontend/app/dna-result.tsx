@@ -10,6 +10,7 @@ import {
 import { Image } from "expo-image";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import { Feather } from "@expo/vector-icons";
 
 import { media, INR_TO_USD } from "@/src/api";
 import { colors, fonts, spacing, radius } from "@/src/theme";
@@ -48,7 +49,7 @@ export default function DnaResult() {
     <View style={styles.root}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: insets.bottom + spacing.xxxl }}>
         <View style={{ paddingTop: insets.top }}>
-          <BackHeader title="Your Design DNA" />
+          <BackHeader />
         </View>
 
         <Animated.View style={{ opacity: fade }}>
@@ -75,30 +76,36 @@ export default function DnaResult() {
             ))}
           </View>
 
-          {/* Recommendations */}
+          {/* AI Recommendation */}
           <View style={styles.recHeader}>
-            <Eyebrow text="Curated for you" />
+            <View style={styles.aiBadge}>
+              <Feather name="cpu" size={13} color={colors.onSurfaceInverse} />
+              <Text style={styles.aiBadgeText}>AI TRANSLATED YOUR TASTE</Text>
+            </View>
             <Text style={styles.recTitle}>Three pieces in your language</Text>
+            <Text style={styles.recSub}>
+              We read your Design DNA and matched it to our craft catalogue — no invented products, only
+              pieces we can actually make.
+            </Text>
           </View>
 
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.recScroll}
-          >
+          <View style={styles.recList}>
             {dna.recommended_jackets?.map((j) => (
               <Pressable
                 key={j.id}
                 testID={`rec-jacket-${j.id}`}
                 onPress={() => router.push(`/product/${j.id}`)}
-                style={styles.recCard}
+                style={({ pressed }) => [styles.recRow, pressed && { opacity: 0.9 }]}
               >
                 <Image source={{ uri: media(j.image) }} style={styles.recImg} contentFit="cover" transition={300} />
-                <Text style={styles.recName} numberOfLines={1}>{j.name}</Text>
-                <DualPrice inr={j.price_inr} usd={Math.round(j.price_inr * INR_TO_USD)} style={{ fontSize: 12 }} />
+                <View style={styles.recInfo}>
+                  <Text style={styles.recName} numberOfLines={1}>{j.name}</Text>
+                  <DualPrice inr={j.price_inr} usd={Math.round(j.price_inr * INR_TO_USD)} style={{ fontSize: 12 }} />
+                  {j.reason ? <Text style={styles.recReason}>{j.reason}</Text> : null}
+                </View>
               </Pressable>
             ))}
-          </ScrollView>
+          </View>
 
           <View style={styles.ctas}>
             <PrimaryButton
@@ -146,10 +153,23 @@ const styles = StyleSheet.create({
   factKey: { fontFamily: fonts.sans, fontSize: 13, color: colors.onSurfaceTertiary },
   factVal: { fontFamily: fonts.sansMedium, fontSize: 14, color: colors.onSurface },
   recHeader: { paddingHorizontal: spacing.lg, marginTop: spacing.xxxl, gap: spacing.sm },
-  recTitle: { fontFamily: fonts.display, fontSize: 30, color: colors.onSurface },
-  recScroll: { paddingHorizontal: spacing.lg, gap: spacing.md, paddingTop: spacing.lg },
-  recCard: { width: 180 },
-  recImg: { width: 180, aspectRatio: 0.8, backgroundColor: colors.surfaceSecondary, marginBottom: spacing.sm },
-  recName: { fontFamily: fonts.sansMedium, fontSize: 14, color: colors.onSurface, marginBottom: 2 },
+  aiBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    backgroundColor: colors.brand,
+    alignSelf: "flex-start",
+    paddingHorizontal: spacing.md,
+    paddingVertical: 6,
+  },
+  aiBadgeText: { fontFamily: fonts.sansMedium, fontSize: 11, letterSpacing: 1.5, color: colors.onSurfaceInverse },
+  recTitle: { fontFamily: fonts.display, fontSize: 30, color: colors.onSurface, marginTop: spacing.xs },
+  recSub: { fontFamily: fonts.sans, fontSize: 14, lineHeight: 22, color: colors.onSurfaceSecondary },
+  recList: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg, gap: spacing.lg },
+  recRow: { flexDirection: "row", gap: spacing.lg },
+  recImg: { width: 96, aspectRatio: 0.8, backgroundColor: colors.surfaceSecondary },
+  recInfo: { flex: 1, justifyContent: "center", gap: 4 },
+  recName: { fontFamily: fonts.sansMedium, fontSize: 16, color: colors.onSurface },
+  recReason: { fontFamily: fonts.sans, fontSize: 13, lineHeight: 19, color: colors.onSurfaceTertiary },
   ctas: { paddingHorizontal: spacing.lg, marginTop: spacing.xxxl },
 });

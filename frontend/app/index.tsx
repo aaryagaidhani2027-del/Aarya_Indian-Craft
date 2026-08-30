@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -22,6 +22,9 @@ export default function Landing() {
   const insets = useSafeAreaInsets();
   const { height, width } = useWindowDimensions();
   const scrollY = useRef(new Animated.Value(0)).current;
+  const ken = useRef(new Animated.Value(0)).current;
+  const cross = useRef(new Animated.Value(0)).current;
+  const enter = useRef(new Animated.Value(0)).current;
 
   const heroH = height * 0.82;
 
@@ -30,16 +33,42 @@ export default function Landing() {
     outputRange: [-60, 0, heroH * 0.4],
     extrapolate: "clamp",
   });
-  const heroScale = scrollY.interpolate({
-    inputRange: [-200, 0],
-    outputRange: [1.25, 1],
-    extrapolate: "clamp",
-  });
   const titleOpacity = scrollY.interpolate({
     inputRange: [0, heroH * 0.5],
     outputRange: [1, 0],
     extrapolate: "clamp",
   });
+
+  // Ken Burns slow zoom (loops), gentle crossfade between two hero images,
+  // and a one-shot headline entrance. All restrained — no gradients/flash.
+  const kenScale = ken.interpolate({ inputRange: [0, 1], outputRange: [1, 1.12] });
+  const enterTranslate = enter.interpolate({ inputRange: [0, 1], outputRange: [26, 0] });
+  const titleEnterOpacity = Animated.multiply(titleOpacity, enter);
+
+  useEffect(() => {
+    Animated.timing(enter, {
+      toValue: 1,
+      duration: 1100,
+      delay: 250,
+      useNativeDriver: true,
+    }).start();
+
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(ken, { toValue: 1, duration: 14000, useNativeDriver: true }),
+        Animated.timing(ken, { toValue: 0, duration: 14000, useNativeDriver: true }),
+      ])
+    ).start();
+
+    Animated.loop(
+      Animated.sequence([
+        Animated.delay(4500),
+        Animated.timing(cross, { toValue: 1, duration: 2200, useNativeDriver: true }),
+        Animated.delay(4500),
+        Animated.timing(cross, { toValue: 0, duration: 2200, useNativeDriver: true }),
+      ])
+    ).start();
+  }, [ken, cross, enter]);
 
   return (
     <View style={styles.root}>
@@ -60,16 +89,26 @@ export default function Landing() {
               left: 0,
               right: 0,
               bottom: 0,
-              transform: [{ translateY: heroTranslate }, { scale: heroScale }],
+              transform: [{ translateY: heroTranslate }],
             }}
           >
-            <Image
-              testID="hero-image"
-              source={{ uri: media("hero_male") }}
-              style={{ width: "100%", height: "100%" }}
-              contentFit="cover"
-              transition={600}
-            />
+            <Animated.View style={[StyleSheet.absoluteFill, { transform: [{ scale: kenScale }] }]}>
+              <Image
+                testID="hero-image"
+                source={{ uri: media("hero_male") }}
+                style={StyleSheet.absoluteFill}
+                contentFit="cover"
+                transition={600}
+              />
+              <Animated.View style={[StyleSheet.absoluteFill, { opacity: cross }]}>
+                <Image
+                  source={{ uri: media("hero_female") }}
+                  style={StyleSheet.absoluteFill}
+                  contentFit="cover"
+                  transition={0}
+                />
+              </Animated.View>
+            </Animated.View>
             <LinearGradient
               colors={["rgba(28,28,26,0.35)", "rgba(28,28,26,0)", "rgba(28,28,26,0.85)"]}
               locations={[0, 0.4, 1]}
@@ -80,13 +119,18 @@ export default function Landing() {
           <Animated.View
             style={[
               styles.heroContent,
-              { paddingTop: insets.top + spacing.xl, opacity: titleOpacity },
+              { paddingTop: insets.top + spacing.xl, opacity: titleEnterOpacity },
             ]}
           >
             <Eyebrow text="Contemporary Indian Craft" color="rgba(251,251,249,0.75)" />
           </Animated.View>
 
-          <Animated.View style={[styles.heroBottom, { opacity: titleOpacity }]}>
+          <Animated.View
+            style={[
+              styles.heroBottom,
+              { opacity: titleEnterOpacity, transform: [{ translateY: enterTranslate }] },
+            ]}
+          >
             <Text style={styles.heroTitle} testID="hero-title">
               OLD CRAFT.{"\n"}NEW LANGUAGE.
             </Text>
