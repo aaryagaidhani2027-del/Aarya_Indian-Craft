@@ -34,6 +34,7 @@ export default function Landing() {
   const [baseImg, setBaseImg] = useState(HERO_SEQUENCE[0]);
   const [overlayImg, setOverlayImg] = useState<string | null>(null);
   const [crafts, setCrafts] = useState<Craft[]>([]);
+  const [craftError, setCraftError] = useState(false);
   const seqRef = useRef(0);
 
   const heroH = height * 0.82;
@@ -72,7 +73,7 @@ export default function Landing() {
   }, [ken, enter]);
 
   useEffect(() => {
-    api.get("/crafts").then((d) => setCrafts(d.crafts)).catch(() => {});
+    api.get("/crafts").then((d) => setCrafts(d.crafts ?? [])).catch(() => setCraftError(true));
   }, []);
 
   // Cinematic sequence: crossfade through the campaign frames like a fashion film.
@@ -227,6 +228,9 @@ export default function Landing() {
               </View>
             </Pressable>
           ))}
+          {craftError ? (
+            <Text style={styles.craftUnavailable}>Craft cards are temporarily unavailable. Explore the collection to continue.</Text>
+          ) : null}
         </View>
 
         {/* CRAFT TEASER */}
@@ -322,6 +326,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceSecondary,
   },
   craftCardText: { padding: spacing.lg, gap: 4 },
+  craftUnavailable: { fontFamily: fonts.sans, fontSize: 13, lineHeight: 20, color: colors.onSurfaceSecondary, paddingTop: spacing.sm },
   craftIndex: {
     fontFamily: fonts.sansMedium,
     fontSize: 11,
