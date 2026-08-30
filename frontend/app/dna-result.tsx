@@ -82,7 +82,7 @@ export default function DnaResult() {
               <Feather name="cpu" size={13} color={colors.onSurfaceInverse} />
               <Text style={styles.aiBadgeText}>AI TRANSLATED YOUR TASTE</Text>
             </View>
-            <Text style={styles.recTitle}>Three pieces in your language</Text>
+            <Text style={styles.recTitle}>Your edit</Text>
             <Text style={styles.recSub}>
               We read your Design DNA and matched it to our craft catalogue — no invented products, only
               pieces we can actually make.
