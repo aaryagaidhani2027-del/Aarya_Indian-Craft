@@ -195,7 +195,7 @@ export default function Dna() {
       {submitting ? (
         <View style={styles.overlay} testID="dna-analysing">
           <Eyebrow text="Please hold" color="rgba(251,251,249,0.6)" />
-          <Text style={styles.overlayTitle}>Analysing your{"\n"}design DNA</Text>
+          <Text style={styles.overlayTitle}>TRANSLATING YOUR{"\n"}DESIGN DNA</Text>
           <View style={styles.overlayTrack}>
             <Animated.View
               style={[
@@ -204,7 +204,7 @@ export default function Dna() {
               ]}
             />
           </View>
-          <Text style={styles.overlayText}>Translating your taste into craft…</Text>
+          <Text style={styles.overlayText}>Reading the rhythm of your taste…</Text>
         </View>
       ) : null}
     </View>
