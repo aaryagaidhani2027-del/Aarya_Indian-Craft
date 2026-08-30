@@ -30,6 +30,11 @@ export type Jacket = {
   hero?: boolean;
   tagline?: string;
   category: string;
+  gender: string;
+  craft_type: string;
+  reversible?: boolean;
+  piece_no?: string;
+  technique?: string;
   silhouette: string;
   quilt: string;
   colour: string;

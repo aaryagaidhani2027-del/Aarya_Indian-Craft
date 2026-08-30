@@ -57,8 +57,21 @@ UNDERSTAND → BUY. Hackathon MVP — a spectacular working golden path over bre
 - P4 Atelier: prominent MADE-ABILITY score + supporting copy ("Your design fits our current craft…"),
   live dual price + meter, LET AI FIX IT on conflicts.
 - P5 Product Passport / Craft Story: kept, editorial, with LISTEN TO THE STORY ElevenLabs audio.
-- P6 Checkout + full golden path (Landing→DNA→Result→Recommendation→Product→Atelier→Price→Made-ability→
-  Craft Story→Checkout) verified end-to-end with no regressions.
+## Expansion pass (2026-06, iteration 4) — verified by testing agent (19/19 backend, full journey)
+- Catalogue expanded to 10 gender/craft-distinct products (Men/Women/Unisex × Quilting/Ajrakh/Kantha/
+  Kalamkari), each with a UNIQUE AI-generated campaign image. Product ids j01–j10 (j11/j12 removed;
+  DNA recommendations remapped). New fields: gender, craft_type, reversible, piece_no, technique.
+- Cinematic landing: multi-frame crossfade sequence (man→woman→craft→product→movement) + Ken Burns,
+  subtitle line, secondary CTA → EXPLORE THE COLLECTION, and a new "CRAFT, REIMAGINED" section with 4
+  craft-language cards that deep-link into the filtered catalogue (`/catalogue?craft=`).
+- Catalogue filters: two rows — SHOP (gender) + CRAFT — with live filtering; `GET /api/jackets?gender=&craft=`
+  and new `GET /api/crafts`. Safe image fallback added to `/api/media`.
+- Product page: adaptive flip label (reversible vs "turn to see the craft"), premium Product Passport
+  (Craft/Technique/Material/Origin/Maker/Production time) + piece ID (PIECE 00X / CRAFT / 2026).
+- Atelier is craft-aware: the pattern tab + option labels adopt the product's craft vocabulary
+  (e.g. Ajrakh → Block/Trellis/Panel/Scatter/Vine) while ids keep pricing/made-ability valid.
+- Craft Story: editorial waveform in the audio player + piece ID in the passport.
+- Imagery: gen_images2.py produced 12 new distinct campaign/texture images (Emergent key, reused).
 
 ## Backlog / not built (intentional per brief)
 - P2: auth, admin, artisan onboarding, logistics, real payments, full marketplace, social — out of scope.

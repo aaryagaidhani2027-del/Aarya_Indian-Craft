@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -13,9 +13,14 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 
-import { media } from "@/src/api";
+import { api, media } from "@/src/api";
 import { colors, fonts, spacing } from "@/src/theme";
 import { PrimaryButton, SecondaryButton, Eyebrow } from "@/src/ui";
+
+// The fashion-film sequence: man -> woman -> craft macro -> product -> movement.
+const HERO_SEQUENCE = ["hero_male", "hero_female", "quilt_closeup", "jacket_front", "cropped_quilt_women"];
+
+type Craft = { id: string; title: string; image: string; description: string };
 
 export default function Landing() {
   const router = useRouter();
@@ -25,6 +30,11 @@ export default function Landing() {
   const ken = useRef(new Animated.Value(0)).current;
   const cross = useRef(new Animated.Value(0)).current;
   const enter = useRef(new Animated.Value(0)).current;
+
+  const [baseImg, setBaseImg] = useState(HERO_SEQUENCE[0]);
+  const [overlayImg, setOverlayImg] = useState<string | null>(null);
+  const [crafts, setCrafts] = useState<Craft[]>([]);
+  const seqRef = useRef(0);
 
   const heroH = height * 0.82;
 
@@ -59,16 +69,29 @@ export default function Landing() {
         Animated.timing(ken, { toValue: 0, duration: 14000, useNativeDriver: true }),
       ])
     ).start();
+  }, [ken, enter]);
 
-    Animated.loop(
-      Animated.sequence([
-        Animated.delay(4500),
-        Animated.timing(cross, { toValue: 1, duration: 2200, useNativeDriver: true }),
-        Animated.delay(4500),
-        Animated.timing(cross, { toValue: 0, duration: 2200, useNativeDriver: true }),
-      ])
-    ).start();
-  }, [ken, cross, enter]);
+  useEffect(() => {
+    api.get("/crafts").then((d) => setCrafts(d.crafts)).catch(() => {});
+  }, []);
+
+  // Cinematic sequence: crossfade through the campaign frames like a fashion film.
+  useEffect(() => {
+    const id = setInterval(() => {
+      const ni = (seqRef.current + 1) % HERO_SEQUENCE.length;
+      setOverlayImg(HERO_SEQUENCE[ni]);
+      cross.setValue(0);
+      Animated.timing(cross, { toValue: 1, duration: 1700, useNativeDriver: true }).start(({ finished }) => {
+        if (finished) {
+          seqRef.current = ni;
+          setBaseImg(HERO_SEQUENCE[ni]);
+          setOverlayImg(null);
+          cross.setValue(0);
+        }
+      });
+    }, 4200);
+    return () => clearInterval(id);
+  }, [cross]);
 
   return (
     <View style={styles.root}>
@@ -95,19 +118,21 @@ export default function Landing() {
             <Animated.View style={[StyleSheet.absoluteFill, { transform: [{ scale: kenScale }] }]}>
               <Image
                 testID="hero-image"
-                source={{ uri: media("hero_male") }}
+                source={{ uri: media(baseImg) }}
                 style={StyleSheet.absoluteFill}
                 contentFit="cover"
-                transition={600}
+                transition={0}
               />
-              <Animated.View style={[StyleSheet.absoluteFill, { opacity: cross }]}>
-                <Image
-                  source={{ uri: media("hero_female") }}
-                  style={StyleSheet.absoluteFill}
-                  contentFit="cover"
-                  transition={0}
-                />
-              </Animated.View>
+              {overlayImg ? (
+                <Animated.View style={[StyleSheet.absoluteFill, { opacity: cross }]}>
+                  <Image
+                    source={{ uri: media(overlayImg) }}
+                    style={StyleSheet.absoluteFill}
+                    contentFit="cover"
+                    transition={0}
+                  />
+                </Animated.View>
+              ) : null}
             </Animated.View>
             <LinearGradient
               colors={["rgba(28,28,26,0.35)", "rgba(28,28,26,0)", "rgba(28,28,26,0.85)"]}
@@ -134,6 +159,7 @@ export default function Landing() {
             <Text style={styles.heroTitle} testID="hero-title">
               OLD CRAFT.{"\n"}NEW LANGUAGE.
             </Text>
+            <Text style={styles.heroSub}>Indian craft, translated for how we live now.</Text>
             <Text style={styles.heroCopy}>
               Discover Indian craft through a contemporary lens — and create
               something that feels entirely yours.
@@ -149,9 +175,9 @@ export default function Landing() {
             onPress={() => router.push("/dna")}
           />
           <SecondaryButton
-            testID="explore-jacket-cta"
-            label="EXPLORE THE JACKET"
-            onPress={() => router.push("/product/j01")}
+            testID="explore-collection-cta"
+            label="EXPLORE THE COLLECTION"
+            onPress={() => router.push("/catalogue")}
             style={{ marginTop: spacing.md }}
           />
         </View>
@@ -174,6 +200,33 @@ export default function Landing() {
               <Text style={styles.pairLabel}>REVERSE</Text>
             </View>
           </View>
+        </View>
+
+        {/* CRAFT, REIMAGINED */}
+        <View style={styles.section}>
+          <Eyebrow text="Craft, reimagined" />
+          <Text style={styles.sectionTitle}>Thousands of traditions.{"\n"}A new vocabulary.</Text>
+        </View>
+        <View style={styles.craftList}>
+          {crafts.map((c, i) => (
+            <Pressable
+              key={c.id}
+              testID={`craft-card-${c.id.toLowerCase()}`}
+              onPress={() => router.push(`/catalogue?craft=${c.id}`)}
+              style={({ pressed }) => [styles.craftCard, pressed && { opacity: 0.92 }]}
+            >
+              <Image source={{ uri: media(c.image) }} style={StyleSheet.absoluteFill} contentFit="cover" transition={400} />
+              <LinearGradient
+                colors={["rgba(28,28,26,0.15)", "rgba(28,28,26,0.75)"]}
+                style={StyleSheet.absoluteFill}
+              />
+              <View style={styles.craftCardText}>
+                <Text style={styles.craftIndex}>{`0${i + 1}`}</Text>
+                <Text style={styles.craftTitle}>{c.title}</Text>
+                <Text style={styles.craftDesc}>{c.description}</Text>
+              </View>
+            </Pressable>
+          ))}
         </View>
 
         {/* CRAFT TEASER */}
@@ -202,14 +255,14 @@ export default function Landing() {
         {/* EXPLORE COLLECTION */}
         <View style={[styles.section, { paddingBottom: insets.bottom + spacing.xxxl }]}>
           <Eyebrow text="The collection" />
-          <Text style={styles.sectionTitle}>Twelve concepts.{"\n"}One language.</Text>
+          <Text style={styles.sectionTitle}>Ten pieces.{"\n"}Four craft languages.</Text>
           <Text style={styles.sectionBody}>
-            A tightly curated catalogue — from the quietest minimal cut to the
-            loudest experimental voice.
+            A tightly curated collection for men and women — one brand, many crafts,
+            wearable from Mumbai to Tokyo.
           </Text>
           <PrimaryButton
-            testID="explore-collection-cta"
-            label="EXPLORE THE COLLECTION"
+            testID="view-all-cta"
+            label="VIEW THE COLLECTION"
             onPress={() => router.push("/catalogue")}
             style={{ marginTop: spacing.xl }}
           />
@@ -248,6 +301,44 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 23,
     marginTop: spacing.lg,
+    maxWidth: 320,
+  },
+  heroSub: {
+    fontFamily: fonts.sans,
+    color: "rgba(251,251,249,0.7)",
+    fontSize: 13,
+    letterSpacing: 0.3,
+    marginTop: spacing.md,
+  },
+  craftList: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+    gap: spacing.md,
+  },
+  craftCard: {
+    height: 200,
+    overflow: "hidden",
+    justifyContent: "flex-end",
+    backgroundColor: colors.surfaceSecondary,
+  },
+  craftCardText: { padding: spacing.lg, gap: 4 },
+  craftIndex: {
+    fontFamily: fonts.sansMedium,
+    fontSize: 11,
+    letterSpacing: 2,
+    color: "rgba(251,251,249,0.7)",
+  },
+  craftTitle: {
+    fontFamily: fonts.display,
+    fontSize: 34,
+    letterSpacing: 1,
+    color: colors.onSurfaceInverse,
+  },
+  craftDesc: {
+    fontFamily: fonts.sans,
+    fontSize: 13,
+    lineHeight: 19,
+    color: "rgba(251,251,249,0.85)",
     maxWidth: 320,
   },
   ctaBlock: {

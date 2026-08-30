@@ -36,11 +36,13 @@ function FlippableJacket({
   reverse,
   w,
   h,
+  label,
 }: {
   front: string;
   reverse: string;
   w: number;
   h: number;
+  label: string;
 }) {
   const [flipped, setFlipped] = useState(false);
   const anim = useRef(new Animated.Value(0)).current;
@@ -84,7 +86,7 @@ function FlippableJacket({
         style={({ pressed }) => [flipStyles.flipBtn, pressed && { opacity: 0.85 }]}
       >
         <Feather name="refresh-cw" size={14} color={colors.onSurfaceInverse} />
-        <Text style={flipStyles.flipText}>ONE JACKET · TWO WORLDS</Text>
+        <Text style={flipStyles.flipText}>{label}</Text>
       </Pressable>
     </View>
   );
@@ -122,21 +124,27 @@ export default function Product() {
   };
 
   const passport = [
-    { k: "Silhouette", v: jacket.silhouette },
-    { k: "Quilt pattern", v: jacket.quilt },
-    { k: "Colour", v: jacket.colour },
-    { k: "Craft intensity", v: jacket.craft_intensity },
-    { k: "Material", v: jacket.material },
     { k: "Craft", v: jacket.craft },
+    { k: "Technique", v: jacket.technique ?? "Hand-finished" },
+    { k: "Material", v: jacket.material },
+    { k: "Origin", v: "India" },
+    { k: "Maker", v: "40+ artisan collective" },
     { k: "Production time", v: `${jacket.production_days} days` },
   ];
+  const pieceId = `PIECE ${jacket.piece_no ?? "000"} / ${jacket.craft_type.toUpperCase()} / 2026`;
 
   return (
     <View style={styles.root}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
         {/* Flippable hero — one jacket, two worlds */}
         <View style={{ height: galleryH }}>
-          <FlippableJacket front={jacket.front_image} reverse={jacket.reverse_image} w={width} h={galleryH} />
+          <FlippableJacket
+            front={jacket.front_image}
+            reverse={jacket.reverse_image}
+            w={width}
+            h={galleryH}
+            label={jacket.reversible ? "ONE JACKET · TWO WORLDS" : "TURN TO SEE THE CRAFT"}
+          />
           <View style={[styles.galleryTop, { top: insets.top }]}>
             <BackHeader />
           </View>
@@ -144,13 +152,16 @@ export default function Product() {
 
         {/* Title */}
         <View style={styles.body}>
-          {jacket.hero ? <Eyebrow text={jacket.tagline ?? ""} /> : <Eyebrow text={jacket.category} />}
+          {jacket.hero ? <Eyebrow text={jacket.tagline ?? ""} /> : <Eyebrow text={`${jacket.gender} · ${jacket.craft_type}`} />}
           <Text style={styles.title}>{jacket.name}</Text>
           <DualPrice
             inr={jacket.price_inr}
             usd={Math.round(jacket.price_inr * INR_TO_USD)}
             style={{ marginTop: spacing.sm }}
           />
+          <View style={styles.pieceBadge}>
+            <Text style={styles.pieceText}>{pieceId}</Text>
+          </View>
           <Text style={styles.desc}>{jacket.description}</Text>
 
           {/* AI Design Moment */}
@@ -158,7 +169,7 @@ export default function Product() {
             <Eyebrow text="The design moment" />
             <Text style={styles.quote}>
               “A {jacket.silhouette.toLowerCase()} silhouette in {jacket.colour.toLowerCase()}, where{" "}
-              {jacket.quilt.toLowerCase()} quilting meets {jacket.craft_intensity.toLowerCase()} craft — old
+              {jacket.craft.toLowerCase()} meets {jacket.craft_intensity.toLowerCase()} craft — old
               craft, spoken in a new language.”
             </Text>
           </View>
@@ -257,6 +268,15 @@ const styles = StyleSheet.create({
     color: colors.onSurface,
     marginTop: spacing.xs,
   },
+  pieceBadge: {
+    alignSelf: "flex-start",
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    marginTop: spacing.md,
+  },
+  pieceText: { fontFamily: fonts.sansMedium, fontSize: 10, letterSpacing: 2, color: colors.onSurfaceTertiary },
   desc: {
     fontFamily: fonts.sans,
     fontSize: 15,

@@ -85,6 +85,10 @@ async def get_media(name: str):
         return FileResponse(str(fp), media_type="image/png")
     if safe in MEDIA_FALLBACK:
         return RedirectResponse(MEDIA_FALLBACK[safe])
+    # last-resort default so the UI never shows a broken image
+    default = MEDIA_DIR / "hero_male.png"
+    if default.exists():
+        return FileResponse(str(default), media_type="image/png")
     raise HTTPException(status_code=404, detail="media not found")
 
 
@@ -97,11 +101,24 @@ async def root():
 
 
 @api_router.get("/jackets")
-async def list_jackets(category: Optional[str] = None):
+async def list_jackets(gender: Optional[str] = None, craft: Optional[str] = None, category: Optional[str] = None):
     items = design.JACKETS
-    if category and category != "All":
-        items = [j for j in items if j["category"] == category]
-    return {"categories": design.CATEGORIES, "jackets": items}
+    craft = craft or category
+    if gender and gender != "All":
+        items = [j for j in items if j["gender"] == gender]
+    if craft and craft != "All":
+        items = [j for j in items if j["craft_type"] == craft]
+    return {
+        "categories": design.CATEGORIES,
+        "genders": design.GENDERS,
+        "crafts": design.CRAFTS_FILTER,
+        "jackets": items,
+    }
+
+
+@api_router.get("/crafts")
+async def list_crafts():
+    return {"crafts": design.CRAFTS}
 
 
 @api_router.get("/jackets/{jacket_id}")

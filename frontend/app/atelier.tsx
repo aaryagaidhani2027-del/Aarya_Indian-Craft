@@ -38,13 +38,20 @@ const CATS = [
   { key: "personal", label: "Detail", src: "personal_details" },
 ] as const;
 
+// Each craft speaks its own pattern vocabulary — the Atelier adapts to the
+// selected product's craft (same underlying ids keep pricing/made-ability valid).
+const PATTERN_LABELS: Record<string, Record<string, string>> = {
+  Ajrakh: { tab: "Block", geometric: "Trellis", patchwork: "Panel", abstract: "Scatter", organic: "Vine" },
+  Kantha: { tab: "Stitch", geometric: "Running", patchwork: "Dense", abstract: "Free", organic: "Sparse" },
+  Kalamkari: { tab: "Motif", geometric: "Border", patchwork: "Panel", abstract: "Narrative", organic: "Floral" },
+};
+
 const COLOUR_IMAGE: Record<string, string> = {
   ivory: "hero_male",
   sand: "hero_male",
   indigo: "hero_female",
   black: "jacket_front",
-  rust: "jacket_reverse",
-  olive: "jacket_reverse",
+  rust: "jacket_reverse",  olive: "jacket_reverse",
 };
 
 export default function Atelier() {
@@ -110,6 +117,7 @@ export default function Atelier() {
 
   const currentCat = CATS.find((c) => c.key === activeCat)!;
   const currentOpts = options[currentCat.src as keyof Options] as Opt[];
+  const patternMap = PATTERN_LABELS[activeJacket?.craft_type ?? ""];
   const made = result?.madeability;
   const conflict = made?.conflicts?.[0];
 
@@ -194,7 +202,7 @@ export default function Atelier() {
                 style={styles.catTab}
               >
                 <Text style={[styles.catText, { color: on ? colors.onSurface : colors.onSurfaceTertiary }]}>
-                  {c.label}
+                  {c.key === "quilt" && patternMap ? patternMap.tab : c.label}
                 </Text>
                 {on ? <View style={styles.catUnderline} /> : null}
               </Pressable>
@@ -212,6 +220,7 @@ export default function Atelier() {
             {currentOpts.map((o) => {
               const on = (selection as any)[activeCat] === o.id;
               const isColour = activeCat === "colour";
+              const optLabel = activeCat === "quilt" && patternMap ? patternMap[o.id] ?? o.label : o.label;
               return (
                 <Pressable
                   key={o.id}
@@ -228,7 +237,7 @@ export default function Atelier() {
                   >
                     {!isColour ? (
                       <Text style={[styles.swatchInitial, on && { color: colors.onSurfaceInverse }]}>
-                        {o.label.charAt(0)}
+                        {optLabel.charAt(0)}
                       </Text>
                     ) : null}
                     {on ? (
@@ -238,7 +247,7 @@ export default function Atelier() {
                     ) : null}
                   </View>
                   <Text style={[styles.swatchLabel, on && { color: colors.onSurface, fontFamily: fonts.sansMedium }]}>
-                    {o.label}
+                    {optLabel}
                   </Text>
                 </Pressable>
               );
@@ -302,7 +311,9 @@ export default function Atelier() {
                 style={{ fontSize: 16 }}
               />
             )}
-            <Text style={styles.footerNote}>{activeJacket?.name ?? "The Reversible Quilted Jacket"}</Text>
+            <Text style={styles.footerNote}>
+              {activeJacket ? `${activeJacket.name} · ${activeJacket.craft_type}` : "The Reversible Quilted Jacket"}
+            </Text>
           </View>
           <PrimaryButton
             testID="atelier-continue-cta"

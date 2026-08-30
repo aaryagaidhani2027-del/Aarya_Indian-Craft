@@ -32,6 +32,8 @@ function fmt(sec: number) {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
+const WAVE = [8, 14, 20, 12, 24, 16, 10, 22, 18, 26, 14, 9, 20, 15, 23, 11, 19, 25, 13, 17, 21, 10, 16, 22, 12, 18, 14, 8];
+
 export default function CraftStory() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -96,8 +98,16 @@ export default function CraftStory() {
               </Pressable>
               <View style={styles.playerRight}>
                 <Text style={styles.playerLabel}>LISTEN TO THE STORY</Text>
-                <View style={styles.scrubTrack}>
-                  <View style={[styles.scrubFill, { width: `${Math.min(progress * 100, 100)}%` }]} />
+                <View style={styles.waveRow}>
+                  {WAVE.map((h, i) => (
+                    <View
+                      key={i}
+                      style={[
+                        styles.waveBar,
+                        { height: h, backgroundColor: i / WAVE.length <= progress ? colors.onSurface : colors.surfaceTertiary },
+                      ]}
+                    />
+                  ))}
                 </View>
                 <View style={styles.timeRow}>
                   <Text style={styles.time}>{fmt(status.currentTime)}</Text>
@@ -117,6 +127,7 @@ export default function CraftStory() {
 
         {/* Body */}
         <View style={styles.body}>
+          <Eyebrow text="The story behind the stitch" />
           <Text style={styles.bodyText}>{story?.body}</Text>
         </View>
 
@@ -125,6 +136,9 @@ export default function CraftStory() {
           <View style={styles.passport}>
             <Eyebrow text="Your piece" />
             <Text style={styles.passportTitle}>Product Passport</Text>
+            <View style={styles.pieceBadge}>
+              <Text style={styles.pieceText}>PIECE 001 / QUILT / 2026</Text>
+            </View>
             {Object.entries({
               Craft: story.passport.craft,
               Technique: story.passport.technique,
@@ -171,7 +185,17 @@ const styles = StyleSheet.create({
   playerRight: { flex: 1, gap: spacing.sm },
   playerLabel: { fontFamily: fonts.sansMedium, fontSize: 11, letterSpacing: 2, color: colors.onSurface },
   scrubTrack: { height: 2, backgroundColor: colors.divider },
-  scrubFill: { height: 2, backgroundColor: colors.onSurface },
+  waveRow: { flexDirection: "row", alignItems: "center", gap: 3, height: 28 },
+  waveBar: { width: 2.5, borderRadius: 2 },
+  pieceBadge: {
+    alignSelf: "flex-start",
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    marginBottom: spacing.md,
+  },
+  pieceText: { fontFamily: fonts.sansMedium, fontSize: 10, letterSpacing: 2, color: colors.onSurfaceTertiary },
   timeRow: { flexDirection: "row", justifyContent: "space-between" },
   time: { fontFamily: fonts.sans, fontSize: 11, color: colors.onSurfaceTertiary },
   audioNote: {
@@ -183,7 +207,7 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   body: { paddingHorizontal: spacing.lg, marginTop: spacing.xxl },
-  bodyText: { fontFamily: fonts.sans, fontSize: 15, lineHeight: 26, color: colors.onSurfaceSecondary },
+  bodyText: { fontFamily: fonts.sans, fontSize: 15, lineHeight: 26, color: colors.onSurfaceSecondary, marginTop: spacing.md },
   passport: {
     marginTop: spacing.xxxl,
     marginHorizontal: spacing.lg,

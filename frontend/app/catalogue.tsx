@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { Image } from "expo-image";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 
 import { api, media, Jacket, INR_TO_USD } from "@/src/api";
 import { colors, fonts, spacing, radius } from "@/src/theme";
@@ -19,19 +19,23 @@ import { BackHeader, DualPrice, Eyebrow } from "@/src/ui";
 export default function Catalogue() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const [categories, setCategories] = useState<string[]>(["All"]);
-  const [active, setActive] = useState("All");
+  const params = useLocalSearchParams<{ craft?: string }>();
+  const [genders, setGenders] = useState<string[]>(["All"]);
+  const [craftsList, setCraftsList] = useState<string[]>(["All"]);
+  const [gender, setGender] = useState("All");
+  const [craft, setCraft] = useState(params.craft ?? "All");
   const [jackets, setJackets] = useState<Jacket[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
-  const load = (cat: string) => {
+  const load = () => {
     setLoading(true);
     setError(false);
     api
-      .get(`/jackets${cat && cat !== "All" ? `?category=${cat}` : ""}`)
+      .get(`/jackets?gender=${gender}&craft=${craft}`)
       .then((d) => {
-        setCategories(d.categories);
+        setGenders(d.genders);
+        setCraftsList(d.crafts);
         setJackets(d.jackets);
       })
       .catch(() => setError(true))
@@ -39,31 +43,58 @@ export default function Catalogue() {
   };
 
   useEffect(() => {
-    load(active);
-  }, [active]);
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gender, craft]);
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
-      {/* Sticky header + chip row */}
+      {/* Sticky header + filter rows */}
       <View style={styles.headerWrap}>
         <BackHeader title="The Collection" />
         <View style={styles.introRow}>
-          <Eyebrow text="Old craft. New language." />
+          <Eyebrow text="One brand. Many crafts." />
           <Text style={styles.count}>{jackets.length} pieces</Text>
         </View>
+
+        <Text style={styles.filterLabel}>SHOP</Text>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           style={styles.chipRow}
           contentContainerStyle={styles.chipContent}
         >
-          {categories.map((c) => {
-            const on = c === active;
+          {genders.map((g) => {
+            const on = g === gender;
+            return (
+              <Pressable
+                key={g}
+                testID={`gender-chip-${g.toLowerCase()}`}
+                onPress={() => setGender(g)}
+                style={[styles.chip, on ? styles.chipOn : styles.chipOff]}
+              >
+                <Text style={[styles.chipText, { color: on ? colors.onSurfaceInverse : colors.onSurfaceSecondary }]}>
+                  {g}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+
+        <Text style={styles.filterLabel}>CRAFT</Text>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.chipRow}
+          contentContainerStyle={styles.chipContent}
+        >
+          {craftsList.map((c) => {
+            const on = c === craft;
             return (
               <Pressable
                 key={c}
-                testID={`filter-chip-${c.toLowerCase()}`}
-                onPress={() => setActive(c)}
+                testID={`craft-chip-${c.toLowerCase()}`}
+                onPress={() => setCraft(c)}
                 style={[styles.chip, on ? styles.chipOn : styles.chipOff]}
               >
                 <Text style={[styles.chipText, { color: on ? colors.onSurfaceInverse : colors.onSurfaceSecondary }]}>
@@ -82,7 +113,7 @@ export default function Catalogue() {
       ) : error ? (
         <View style={styles.center}>
           <Text style={styles.errorText}>Unable to load the collection.</Text>
-          <Pressable testID="retry-button" onPress={() => load(active)}>
+          <Pressable testID="retry-button" onPress={() => load()}>
             <Text style={styles.retry}>RETRY</Text>
           </Pressable>
         </View>
@@ -118,7 +149,7 @@ export default function Catalogue() {
               ) : null}
               <Text style={styles.cardName} numberOfLines={1}>{item.name}</Text>
               <Text style={styles.cardMeta} numberOfLines={1}>
-                {item.category} · {item.silhouette}
+                {item.gender} · {item.craft_type}
               </Text>
               <DualPrice
                 inr={item.price_inr}
@@ -147,7 +178,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.xs,
-    paddingBottom: spacing.md,
+    paddingBottom: spacing.sm,
   },
   count: {
     fontFamily: fonts.sans,
@@ -155,14 +186,22 @@ const styles = StyleSheet.create({
     color: colors.onSurfaceTertiary,
     letterSpacing: 1,
   },
-  chipRow: { height: 56 },
+  filterLabel: {
+    fontFamily: fonts.sansMedium,
+    fontSize: 10,
+    letterSpacing: 2,
+    color: colors.onSurfaceTertiary,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+  },
+  chipRow: { height: 50 },
   chipContent: {
     paddingHorizontal: spacing.lg,
     gap: spacing.sm,
     alignItems: "center",
   },
   chip: {
-    height: 36,
+    height: 34,
     flexShrink: 0,
     paddingHorizontal: spacing.lg,
     borderRadius: radius.pill,
