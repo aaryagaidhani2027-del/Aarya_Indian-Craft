@@ -47,6 +47,7 @@ export default function Dna() {
   const [idx, setIdx] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState(false);
   const fade = useRef(new Animated.Value(0)).current;
   const analyseProgress = useRef(new Animated.Value(0)).current;
 
@@ -96,6 +97,7 @@ export default function Dna() {
         setIdx(idx + 1);
       } else {
         setSubmitting(true);
+        setSubmitError(false);
         analyseProgress.setValue(0);
         Animated.timing(analyseProgress, { toValue: 1, duration: 1800, useNativeDriver: false }).start();
         try {
@@ -104,6 +106,7 @@ export default function Dna() {
           setTimeout(() => router.replace("/dna-result"), 1850);
         } catch {
           setSubmitting(false);
+          setSubmitError(true);
         }
       }
     }, 260);
@@ -183,6 +186,12 @@ export default function Dna() {
         </ScrollView>
       </Animated.View>
 
+      {submitError ? (
+        <View style={styles.submitError}>
+          <Text style={styles.submitErrorText}>We could not analyse your answers just now. Please choose your final answer again.</Text>
+        </View>
+      ) : null}
+
       {submitting ? (
         <View style={styles.overlay} testID="dna-analysing">
           <Eyebrow text="Please hold" color="rgba(251,251,249,0.6)" />
@@ -245,6 +254,8 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
   },
   stackLabel: { fontFamily: fonts.displayMedium, fontSize: 28, color: colors.onSurface },
+  submitError: { position: "absolute", left: spacing.lg, right: spacing.lg, bottom: spacing.lg, padding: spacing.md, backgroundColor: colors.surfaceSecondary },
+  submitErrorText: { fontFamily: fonts.sans, fontSize: 13, lineHeight: 19, color: colors.onSurfaceSecondary, textAlign: "center" },
   overlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: "rgba(28,28,26,0.96)",
