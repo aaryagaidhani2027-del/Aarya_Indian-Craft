@@ -297,8 +297,10 @@ CRAFT_STORY = {
                  "resist, until the geometry locks into place.\n\n"
                  "We take that patience and cut it into contemporary silhouettes — the print, translated for how "
                  "we live now."),
-        "narration": ("Quilting is more than the joining of fabric. In Indian homes it lived as razai and sujni, "
-                      "layers of worn cotton stitched back into warmth."),
+        "narration": ("Ajrakh begins with the block — a rhythm of print, resist and dye built layer by layer. "
+                      "Each length of cloth passes through the maker's hands many times, indigo over madder over "
+                      "the resist, until the geometry locks into place. We take that patience and cut it into "
+                      "contemporary silhouettes — the print, translated for how we live now."),
         "passport": {"craft": "Ajrakh", "technique": "Hand block printing", "material": "Cotton",
                      "origin": "Gujarat, India", "production_time": "16 days"},
     },
@@ -309,8 +311,10 @@ CRAFT_STORY = {
         "body": ("Kantha turns the simple act of stitching into a language of memory, texture and time. Layers of "
                  "cloth are held by rows of fine running stitch, each line a little uneven, a little human.\n\n"
                  "We keep that hand visible and set it into modern layering pieces — stories, stitched forward."),
-        "narration": ("Quilting is more than the joining of fabric. In Indian homes it lived as razai and sujni, "
-                      "layers of worn cotton stitched back into warmth."),
+        "narration": ("Kantha turns the simple act of stitching into a language of memory, texture and time. "
+                      "Layers of cloth are held by rows of fine running stitch, each line a little uneven, a "
+                      "little human. We keep that hand visible and set it into modern layering pieces — stories, "
+                      "stitched forward."),
         "passport": {"craft": "Kantha", "technique": "Hand Kantha stitching", "material": "Cotton",
                      "origin": "West Bengal, India", "production_time": "20 days"},
     },
