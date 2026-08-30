@@ -138,6 +138,13 @@ export default function Product() {
     router.push("/atelier");
   };
 
+  const meetYourCraft = () => {
+    // Keep the chosen product attached to the journey when Craft Story leads into the Atelier.
+    setActiveJacket(jacket);
+    setSelection(seedSelection(jacket));
+    router.push({ pathname: "/craft-story", params: { craft: jacket.craft_type } });
+  };
+
   const passport = [
     { k: "Craft", v: jacket.craft },
     { k: "Technique", v: jacket.technique ?? "Hand-finished" },
@@ -211,7 +218,7 @@ export default function Product() {
 
           <Pressable
             testID="craft-story-link"
-            onPress={() => router.push({ pathname: "/craft-story", params: { craft: jacket.craft_type } })}
+            onPress={meetYourCraft}
             style={styles.craftLink}
           >
             <Feather name="headphones" size={16} color={colors.onSurface} />
