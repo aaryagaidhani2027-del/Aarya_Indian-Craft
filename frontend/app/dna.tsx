@@ -16,7 +16,7 @@ import * as Haptics from "expo-haptics";
 
 import { api, media } from "@/src/api";
 import { colors, fonts, spacing, radius } from "@/src/theme";
-import { BackHeader, Eyebrow } from "@/src/ui";
+import { BackHeader, Eyebrow, PrimaryButton } from "@/src/ui";
 import { useDesign } from "@/src/store";
 
 type Question = {
@@ -43,14 +43,25 @@ export default function Dna() {
   const { setDna } = useDesign();
 
   const [questions, setQuestions] = useState<Question[]>([]);
+  const [loadError, setLoadError] = useState(false);
   const [idx, setIdx] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const fade = useRef(new Animated.Value(0)).current;
   const analyseProgress = useRef(new Animated.Value(0)).current;
 
+  const loadQuestions = () => {
+    setLoadError(false);
+    api.get("/dna/questions")
+      .then((d) => {
+        setQuestions(d.questions ?? []);
+        if (!d.questions?.length) setLoadError(true);
+      })
+      .catch(() => setLoadError(true));
+  };
+
   useEffect(() => {
-    api.get("/dna/questions").then((d) => setQuestions(d.questions)).catch(() => {});
+    loadQuestions();
   }, []);
 
   useEffect(() => {
@@ -61,7 +72,14 @@ export default function Dna() {
   if (!questions.length) {
     return (
       <View style={[styles.root, styles.center, { paddingTop: insets.top }]}>
-        <ActivityIndicator color={colors.onSurface} />
+        {loadError ? (
+          <>
+            <Text style={styles.errorText}>The Design DNA questions are temporarily unavailable.</Text>
+            <PrimaryButton label="TRY AGAIN" onPress={loadQuestions} />
+          </>
+        ) : (
+          <ActivityIndicator color={colors.onSurface} />
+        )}
       </View>
     );
   }
@@ -186,7 +204,8 @@ export default function Dna() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.surface },
-  center: { alignItems: "center", justifyContent: "center" },
+  center: { alignItems: "center", justifyContent: "center", paddingHorizontal: spacing.lg },
+  errorText: { fontFamily: fonts.sans, fontSize: 15, lineHeight: 23, color: colors.onSurfaceSecondary, textAlign: "center", marginBottom: spacing.lg },
   progressTrack: {
     height: 1,
     backgroundColor: colors.divider,
