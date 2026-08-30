@@ -219,8 +219,9 @@ async def dna_result(payload: DnaAnswers):
 # Craft story + passport
 # --------------------------------------------------------------------------- #
 @api_router.get("/craft-story")
-async def craft_story():
-    story = dict(design.CRAFT_STORY)
+async def craft_story(craft: Optional[str] = None):
+    key = craft if craft in design.CRAFT_STORY else "Quilting"
+    story = dict(design.CRAFT_STORY[key])
     story.pop("narration", None)
     return story
 
@@ -240,7 +241,7 @@ async def craft_story_audio():
         from elevenlabs.client import ElevenLabs
         eleven = ElevenLabs(api_key=api_key)
         audio_gen = eleven.text_to_speech.convert(
-            text=design.CRAFT_STORY["narration"],
+            text=design.CRAFT_STORY["Quilting"]["narration"],
             voice_id="EXAVITQu4vr4xnSDxMaL",  # calm editorial voice
             model_id="eleven_multilingual_v2",
         )

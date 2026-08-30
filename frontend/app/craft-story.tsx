@@ -37,6 +37,8 @@ const WAVE = [8, 14, 20, 12, 24, 16, 10, 22, 18, 26, 14, 9, 20, 15, 23, 11, 19, 
 export default function CraftStory() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const params = useLocalSearchParams<{ craft?: string }>();
+  const craft = params.craft ?? "Quilting";
   const [story, setStory] = useState<Story | null>(null);
   const [configured, setConfigured] = useState(false);
   const [ready, setReady] = useState(false);
@@ -45,7 +47,7 @@ export default function CraftStory() {
   const status = useAudioPlayerStatus(player);
 
   useEffect(() => {
-    api.get("/craft-story").then(setStory).catch(() => {});
+    api.get(`/craft-story?craft=${craft}`).then(setStory).catch(() => {});
     api
       .get("/craft-story/audio/status")
       .then((s) => setConfigured(!!s.configured))
