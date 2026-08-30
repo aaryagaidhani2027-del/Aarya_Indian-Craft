@@ -10,7 +10,7 @@ import {
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import { useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
 
@@ -22,7 +22,8 @@ type Story = {
   title: string;
   heading: string;
   body: string;
-  passport: Record<string, string>;
+  hero_image?: string;
+  passport: Record<string, string | undefined>;
 };
 
 function fmt(sec: number) {
@@ -40,20 +41,33 @@ export default function CraftStory() {
   const params = useLocalSearchParams<{ craft?: string }>();
   const craft = params.craft ?? "Quilting";
   const [story, setStory] = useState<Story | null>(null);
-  const [configured, setConfigured] = useState(false);
+  const [audioReady, setAudioReady] = useState(false);
+  const [audioSource, setAudioSource] = useState<"elevenlabs" | "cached" | null>(null);
   const [ready, setReady] = useState(false);
+  const [loadError, setLoadError] = useState(false);
 
-  const player = useAudioPlayer(configured ? { uri: `${API}/craft-story/audio` } : null);
+  const player = useAudioPlayer(audioReady ? { uri: `${API}/craft-story/audio?craft=${encodeURIComponent(craft)}` } : null);
   const status = useAudioPlayerStatus(player);
 
   useEffect(() => {
-    api.get(`/craft-story?craft=${craft}`).then(setStory).catch(() => {});
+    setReady(false);
+    setLoadError(false);
     api
-      .get("/craft-story/audio/status")
-      .then((s) => setConfigured(!!s.configured))
-      .catch(() => {})
+      .get(`/craft-story?craft=${encodeURIComponent(craft)}`)
+      .then(setStory)
+      .catch(() => setLoadError(true));
+    api
+      .get(`/craft-story/audio/status?craft=${encodeURIComponent(craft)}`)
+      .then((s) => {
+        setAudioReady(!!s.ready);
+        setAudioSource(s.source ?? null);
+      })
+      .catch(() => {
+        setAudioReady(false);
+        setAudioSource(null);
+      })
       .finally(() => setReady(true));
-  }, []);
+  }, [craft]);
 
   const toggle = () => {
     if (!player) return;
@@ -73,7 +87,7 @@ export default function CraftStory() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: insets.bottom + spacing.xxxl }}>
         {/* Artisan hero */}
         <View style={{ height: 420 }}>
-          <Image source={{ uri: media("artisan") }} style={StyleSheet.absoluteFill} contentFit="cover" transition={400} />
+          <Image source={{ uri: media(story?.hero_image ?? "artisan") }} style={StyleSheet.absoluteFill} contentFit="cover" transition={400} />
           <LinearGradient colors={["rgba(28,28,26,0.4)", "rgba(28,28,26,0)", "rgba(28,28,26,0.9)"]} locations={[0, 0.4, 1]} style={StyleSheet.absoluteFill} />
           <View style={{ paddingTop: insets.top }}>
             <BackHeader light />
@@ -93,8 +107,8 @@ export default function CraftStory() {
               <Pressable
                 testID="audio-play-button"
                 onPress={toggle}
-                disabled={!configured}
-                style={({ pressed }) => [styles.playBtn, pressed && { opacity: 0.85 }, !configured && { opacity: 0.4 }]}
+                disabled={!audioReady}
+                style={({ pressed }) => [styles.playBtn, pressed && { opacity: 0.85 }, !audioReady && { opacity: 0.4 }]}
               >
                 <Feather name={status.playing ? "pause" : "play"} size={22} color={colors.onSurfaceInverse} />
               </Pressable>
@@ -114,17 +128,23 @@ export default function CraftStory() {
                 <View style={styles.timeRow}>
                   <Text style={styles.time}>{fmt(status.currentTime)}</Text>
                   <Text style={styles.time}>
-                    {configured ? fmt(status.duration) : "Narration by ElevenLabs"}
+                    {audioReady ? fmt(status.duration) : "Audio coming soon"}
                   </Text>
                 </View>
               </View>
             </>
           )}
         </View>
-        {ready && !configured ? (
+        {ready && !audioReady ? (
           <Text style={styles.audioNote} testID="audio-config-note">
-            Voiceover is prepared — it plays here once the ElevenLabs voice is connected.
+            Audio coming soon. This craft story is ready to play as soon as its narration file is available.
           </Text>
+        ) : null}
+        {ready && audioSource === "cached" ? (
+          <Text style={styles.audioNote}>Playing the available craft narration.</Text>
+        ) : null}
+        {loadError ? (
+          <Text style={styles.audioNote}>The full story is temporarily unavailable. Please try again shortly.</Text>
         ) : null}
 
         {/* Body */}
@@ -139,16 +159,16 @@ export default function CraftStory() {
             <Eyebrow text="Your piece" />
             <Text style={styles.passportTitle}>Product Passport</Text>
             <View style={styles.pieceBadge}>
-              <Text style={styles.pieceText}>PIECE 001 / QUILT / 2026</Text>
+              <Text style={styles.pieceText}>{`PIECE 001 / ${craft.toUpperCase()} / 2026`}</Text>
             </View>
-            {Object.entries({
-              Craft: story.passport.craft,
-              Technique: story.passport.technique,
-              Material: story.passport.material,
-              Origin: story.passport.origin,
-              Maker: story.passport.maker,
-              "Production time": story.passport.production_time,
-            }).map(([k, v]) => (
+            {[
+              ["Craft", story.passport.craft],
+              ["Technique", story.passport.technique],
+              ["Material", story.passport.material],
+              ["Origin", story.passport.origin],
+              ["Maker", story.passport.maker],
+              ["Production time", story.passport.production_time],
+            ].filter(([, value]) => Boolean(value)).map(([k, v]) => (
               <View key={k} style={styles.pRow}>
                 <Text style={styles.pKey}>{k}</Text>
                 <Text style={styles.pVal}>{v}</Text>
