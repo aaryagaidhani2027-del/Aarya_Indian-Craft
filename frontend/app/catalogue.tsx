@@ -117,6 +117,13 @@ export default function Catalogue() {
             <Text style={styles.retry}>RETRY</Text>
           </Pressable>
         </View>
+      ) : !jackets.length ? (
+        <View style={styles.center}>
+          <Text style={styles.errorText}>No pieces match these filters yet.</Text>
+          <Pressable testID="clear-filters-button" onPress={() => { setGender("All"); setCraft("All"); }}>
+            <Text style={styles.retry}>CLEAR FILTERS</Text>
+          </Pressable>
+        </View>
       ) : (
         <FlatList
           data={jackets}
