@@ -4,6 +4,8 @@ from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
+import json
+import asyncio
 import logging
 from pathlib import Path
 from pydantic import BaseModel
@@ -56,6 +58,179 @@ class AtelierSelection(BaseModel):
 
 class DnaAnswers(BaseModel):
     answers: Dict[str, str]
+
+
+# The model can describe taste, but product facts always stay server-controlled.
+DNA_MODEL = "gpt-5.6-luna"
+DNA_RESPONSE_SCHEMA = {
+    "type": "object",
+    "additionalProperties": False,
+    "required": [
+        "profile_name",
+        "profile_description",
+        "style_attributes",
+        "recommended_craft",
+        "recommended_product_ids",
+        "recommendation_reasons",
+    ],
+    "properties": {
+        "profile_name": {"type": "string", "maxLength": 30},
+        "profile_description": {"type": "string", "maxLength": 180},
+        "style_attributes": {
+            "type": "array", "minItems": 4, "maxItems": 4,
+            "items": {"type": "string", "maxLength": 20},
+        },
+        "recommended_craft": {
+            "type": "string",
+            "enum": ["Quilting", "Ajrakh", "Kantha"],
+        },
+        "recommended_product_ids": {
+            "type": "array", "minItems": 3, "maxItems": 3,
+            "items": {"type": "string"},
+        },
+        "recommendation_reasons": {
+            "type": "array", "minItems": 3, "maxItems": 3,
+            "items": {"type": "string", "maxLength": 120},
+        },
+    },
+}
+
+
+def _dna_answer_context(answers: Dict[str, str]) -> list[dict]:
+    """Translate stable quiz ids into the actual question/answer labels for the model."""
+    context = []
+    for question in design.DNA_QUESTIONS:
+        answer_id = answers.get(question["id"])
+        option = next((o for o in question["options"] if o["id"] == answer_id), None)
+        if option:
+            context.append({"question": question["title"], "answer": option["label"]})
+    return context
+
+
+def _fallback_dna(answers: Dict[str, str], reason: str) -> dict:
+    logger.info("Design DNA AI fallback: %s", reason)
+    return design.compute_dna(answers)
+
+
+def _validated_ai_dna(ai_result: dict, answers: Dict[str, str]) -> Optional[dict]:
+    """Reject incomplete or invented model output, then hydrate cards from catalogue data."""
+    ids = ai_result.get("recommended_product_ids")
+    reasons = ai_result.get("recommendation_reasons")
+    attributes = ai_result.get("style_attributes")
+    profile_name = ai_result.get("profile_name")
+    profile_description = ai_result.get("profile_description")
+    craft = ai_result.get("recommended_craft")
+
+    valid_ids = {j["id"] for j in design.JACKETS}
+    if (
+        not isinstance(ids, list) or len(ids) != 3 or len(set(ids)) != 3
+        or any(product_id not in valid_ids for product_id in ids)
+        or not isinstance(reasons, list) or len(reasons) != 3
+        or not isinstance(attributes, list) or len(attributes) != 4
+        or not isinstance(profile_name, str) or not profile_name.strip()
+        or not isinstance(profile_description, str) or not profile_description.strip()
+        or craft not in {"Quilting", "Ajrakh", "Kantha"}
+    ):
+        return None
+
+    if (
+        len(profile_name) > 30 or len(profile_description) > 180
+        or any(not isinstance(a, str) or len(a) > 20 for a in attributes)
+        or any(not isinstance(r, str) or len(r) > 120 for r in reasons)
+    ):
+        return None
+
+    jackets_by_id = {j["id"]: j for j in design.JACKETS}
+    recommended_jackets = [
+        {**jackets_by_id[product_id], "reason": reason.strip()}
+        for product_id, reason in zip(ids, reasons)
+    ]
+    palette = next((o["label"] for q in design.DNA_QUESTIONS if q["id"] == "palette"
+                    for o in q["options"] if o["id"] == answers.get("palette")), "Contemporary")
+    silhouette = next((o["label"] for q in design.DNA_QUESTIONS if q["id"] == "silhouette"
+                       for o in q["options"] if o["id"] == answers.get("silhouette")), "Layered")
+
+    # Preserve the response shape consumed by the existing Expo result screen.
+    return {
+        "id": "ai_translated",
+        "name": profile_name.strip().upper(),
+        "description": profile_description.strip(),
+        "palette": palette,
+        "silhouette": silhouette,
+        "craft_affinity": craft,
+        "tags": [attribute.strip() for attribute in attributes],
+        "recommended_craft": craft,
+        "recommended_jackets": recommended_jackets,
+    }
+
+
+async def _compute_ai_dna(answers: Dict[str, str]) -> Optional[dict]:
+    api_key = os.environ.get("OPENAI_API_KEY")
+    if not api_key:
+        return None
+
+    catalogue = [
+        {
+            "id": jacket["id"],
+            "name": jacket["name"],
+            "craft": jacket["craft_type"],
+            "silhouette": jacket["silhouette"],
+            "quilt": jacket["quilt"],
+            "colour": jacket["colour"],
+            "tags": jacket["tags"],
+        }
+        for jacket in design.JACKETS
+    ]
+    prompt = {
+        "quiz_answers": _dna_answer_context(answers),
+        "catalogue": catalogue,
+        "task": (
+            "Act as a cultural and personal style translator for a contemporary Indian craft fashion brand. "
+            "Create an elegant, fashion-editorial identity from the quiz answers. Recommend exactly three "
+            "catalogue product IDs: best match, unexpected relevant match, and alternative. Use only supplied "
+            "catalogue IDs and facts. Never invent products, names, prices, crafts, or production details. "
+            "Quilting is minimal, architectural and quiet; Ajrakh is graphic, rhythmic and expressive; "
+            "Kantha is tactile, handmade, story-led and warm. Avoid generic personality language."
+        ),
+    }
+
+    try:
+        from openai import AsyncOpenAI
+
+        client = AsyncOpenAI(api_key=api_key, timeout=7.0, max_retries=0)
+        response = await asyncio.wait_for(
+            client.responses.create(
+                model=DNA_MODEL,
+                input=[
+                    {
+                        "role": "system",
+                        "content": "Return only the requested structured Design DNA result.",
+                    },
+                    {"role": "user", "content": json.dumps(prompt)},
+                ],
+                text={
+                    "format": {
+                        "type": "json_schema",
+                        "name": "design_dna_result",
+                        "strict": True,
+                        "schema": DNA_RESPONSE_SCHEMA,
+                    }
+                },
+                reasoning={"effort": "none"},
+                max_output_tokens=450,
+                store=False,
+            ),
+            timeout=8.0,
+        )
+        result = _validated_ai_dna(json.loads(response.output_text), answers)
+        if not result:
+            logger.warning("Design DNA AI returned invalid output; using deterministic fallback")
+            return None
+        logger.info("Design DNA AI success: %s", result["name"])
+        return result
+    except Exception as exc:
+        logger.warning("Design DNA AI fallback after request failure: %s", type(exc).__name__)
+        return None
 
 
 class VisualiseRequest(BaseModel):
@@ -212,7 +387,10 @@ async def dna_questions():
 
 @api_router.post("/dna/result")
 async def dna_result(payload: DnaAnswers):
-    return design.compute_dna(payload.answers)
+    ai_result = await _compute_ai_dna(payload.answers)
+    if ai_result:
+        return ai_result
+    return _fallback_dna(payload.answers, "OpenAI unavailable, invalid, or not configured")
 
 
 # --------------------------------------------------------------------------- #
