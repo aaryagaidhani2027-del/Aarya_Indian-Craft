@@ -24,6 +24,7 @@ export default function Checkout() {
   const { selection, compute, activeJacket, size, setSize } = useDesign();
 
   const [placing, setPlacing] = useState(false);
+  const [checkoutError, setCheckoutError] = useState(false);
   const [order, setOrder] = useState<{ order_id: string; delivery_estimate_days: number } | null>(null);
 
   const jacketName = activeJacket?.name ?? "The Reversible Quilted Jacket";
@@ -45,6 +46,7 @@ export default function Checkout() {
 
   const buy = async () => {
     setPlacing(true);
+    setCheckoutError(false);
     try {
       const res = await api.post("/checkout", {
         jacket_name: jacketName,
@@ -57,6 +59,7 @@ export default function Checkout() {
       setOrder(res);
     } catch {
       setPlacing(false);
+      setCheckoutError(true);
     }
   };
 
@@ -157,6 +160,7 @@ export default function Checkout() {
       </ScrollView>
 
       <View style={[styles.stickyBar, { paddingBottom: insets.bottom + spacing.md }]}>
+        {checkoutError ? <Text style={styles.checkoutError}>We could not place the order. Please try again.</Text> : null}
         <PrimaryButton
           testID="buy-jacket-button"
           label={placing ? "PLACING ORDER…" : "BUY MY JACKET"}
@@ -230,6 +234,7 @@ const styles = StyleSheet.create({
   priceAmt: { fontFamily: fonts.sansMedium, fontSize: 14, color: colors.onSurface },
   totalRow: { borderTopWidth: 1, borderTopColor: colors.divider, marginTop: spacing.sm, paddingTop: spacing.md },
   totalLabel: { fontFamily: fonts.sansMedium, fontSize: 15, color: colors.onSurface },
+  checkoutError: { fontFamily: fonts.sans, fontSize: 12, color: colors.warning, textAlign: "center", marginBottom: spacing.sm },
   stickyBar: {
     position: "absolute",
     bottom: 0,
