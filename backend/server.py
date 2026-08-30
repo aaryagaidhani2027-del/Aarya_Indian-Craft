@@ -58,6 +58,11 @@ class DnaAnswers(BaseModel):
     answers: Dict[str, str]
 
 
+class VisualiseRequest(BaseModel):
+    image_base64: str
+    selection: AtelierSelection
+
+
 class CheckoutRequest(BaseModel):
     jacket_name: str
     selection: Optional[AtelierSelection] = None
@@ -127,6 +132,57 @@ async def atelier_compute(selection: AtelierSelection):
     made = design.compute_madeability(sel)
     editorial = design.compose_editorial(sel)
     return {"price": price, "madeability": made, "editorial": editorial, "selection": sel}
+
+
+# --------------------------------------------------------------------------- #
+# Visualise (real AI on-body try-on via Gemini Nano Banana)
+# --------------------------------------------------------------------------- #
+@api_router.post("/visualise")
+async def visualise(req: VisualiseRequest):
+    import base64 as b64
+
+    api_key = os.environ.get("EMERGENT_LLM_KEY")
+    if not api_key:
+        raise HTTPException(status_code=503, detail="not_configured")
+
+    sel = req.selection.dict()
+    sil = next((s for s in design.SILHOUETTES if s["id"] == sel["silhouette"]), design.SILHOUETTES[1])
+    quilt = next((q for q in design.QUILTS if q["id"] == sel["quilt"]), design.QUILTS[0])
+    colour = next((c for c in design.COLOURS if c["id"] == sel["colour"]), design.COLOURS[0])
+    craft = next((c for c in design.CRAFT_INTENSITY if c["id"] == sel["craft"]), design.CRAFT_INTENSITY[0])
+
+    prompt = (
+        "Keep this exact person — same face, hair, skin tone, body and pose, and keep a clean editorial "
+        f"studio background. Dress them in a reversible quilted jacket: a {sil['label'].lower()} silhouette in "
+        f"{colour['poetic']}, with {quilt['descriptor']} and {craft['descriptor']}. Contemporary global fashion "
+        "house editorial photograph, warm ivory and charcoal tones, matte and minimal, premium and realistic. "
+        "The jacket must look modern and wearable — not ethnic wear, no paisley, no gold. Preserve the person's identity."
+    )
+
+    # strip a possible data: prefix defensively
+    img_b64 = req.image_base64.split(",", 1)[-1]
+
+    try:
+        from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
+
+        chat = LlmChat(
+            api_key=api_key,
+            session_id=f"tryon-{uuid.uuid4()}",
+            system_message="You are an elite fashion try-on image generator.",
+        )
+        chat.with_model("gemini", "gemini-3.1-flash-image-preview").with_params(modalities=["image", "text"])
+        msg = UserMessage(text=prompt, file_contents=[ImageContent(img_b64)])
+        _text, images = await chat.send_message_multimodal_response(msg)
+        if not images:
+            raise HTTPException(status_code=502, detail="no_image")
+        name = f"tryon_{uuid.uuid4().hex}"
+        (MEDIA_DIR / f"{name}.png").write_bytes(b64.b64decode(images[0]["data"]))
+        return {"media_name": name}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"visualise error: {e}")
+        raise HTTPException(status_code=502, detail="generation_failed")
 
 
 # --------------------------------------------------------------------------- #

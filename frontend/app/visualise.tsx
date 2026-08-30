@@ -15,7 +15,7 @@ import { useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 
-import { media } from "@/src/api";
+import { api, media } from "@/src/api";
 import { colors, fonts, spacing, radius } from "@/src/theme";
 import { BackHeader, Eyebrow, PrimaryButton, SecondaryButton } from "@/src/ui";
 import { useDesign } from "@/src/store";
@@ -33,8 +33,10 @@ export default function Visualise() {
   const { selection, activeJacket } = useDesign();
 
   const [photo, setPhoto] = useState<string | null>(null);
+  const [resultName, setResultName] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
   const [done, setDone] = useState(false);
+  const [failed, setFailed] = useState(false);
   const [blocked, setBlocked] = useState(false);
 
   const pick = async () => {
@@ -55,23 +57,34 @@ export default function Visualise() {
     }
     const res = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ["images"],
-      quality: 0.9,
+      quality: 0.6,
+      base64: true,
       allowsEditing: true,
       aspect: [3, 4],
     });
     if (!res.canceled && res.assets?.[0]) {
-      setPhoto(res.assets[0].uri);
+      const asset = res.assets[0];
+      setPhoto(asset.uri);
       setDone(false);
-      runPreview();
+      setResultName(null);
+      runPreview(asset.base64 ?? null);
     }
   };
 
-  const runPreview = () => {
+  const runPreview = async (base64: string | null) => {
+    if (!base64) return;
     setProcessing(true);
-    setTimeout(() => {
-      setProcessing(false);
+    setFailed(false);
+    try {
+      const r = await api.post("/visualise", { image_base64: base64, selection });
+      setResultName(r.media_name);
       setDone(true);
-    }, 2200);
+    } catch {
+      setFailed(true);
+      setDone(true); // fall back to editorial-framed original photo
+    } finally {
+      setProcessing(false);
+    }
   };
 
   return (
@@ -82,14 +95,16 @@ export default function Visualise() {
           <Eyebrow text="Visualise yourself" />
           <Text style={styles.title}>See it on you</Text>
           <Text style={styles.sub}>
-            Upload a full-length photo and preview your custom jacket as a luxury
-            editorial image, styled to your selection.
+            Upload a full-length photo and our AI styles you in your custom
+            jacket — presented as a luxury editorial image.
           </Text>
         </View>
 
         {/* Frame */}
         <View style={styles.frame}>
-          {photo ? (
+          {resultName ? (
+            <Image source={{ uri: media(resultName) }} style={StyleSheet.absoluteFill} contentFit="cover" transition={400} />
+          ) : photo ? (
             <Image source={{ uri: photo }} style={StyleSheet.absoluteFill} contentFit="cover" transition={300} />
           ) : (
             <Image source={{ uri: media("hero_female") }} style={StyleSheet.absoluteFill} contentFit="cover" transition={300} blurRadius={2} />
@@ -99,15 +114,21 @@ export default function Visualise() {
           {processing ? (
             <View style={styles.frameCenter} testID="visualise-processing">
               <ActivityIndicator color={colors.onSurfaceInverse} />
-              <Text style={styles.processingText}>Composing your editorial…</Text>
+              <Text style={styles.processingText}>Styling you in your jacket…</Text>
+              <Text style={styles.processingSub}>This can take a few seconds</Text>
             </View>
           ) : done ? (
             <View style={styles.resultBadge} testID="visualise-result">
-              <Text style={styles.badgeLabel}>AI VISUALISATION · PREVIEW</Text>
+              <Text style={styles.badgeLabel}>
+                {resultName ? "AI TRY-ON" : "AI VISUALISATION · PREVIEW"}
+              </Text>
               <Text style={styles.badgeTitle}>{activeJacket?.name ?? "Your custom jacket"}</Text>
               <Text style={styles.badgeMeta}>
                 {selection.silhouette} · {selection.colour} · {selection.quilt}
               </Text>
+              {failed ? (
+                <Text style={styles.badgeMeta}>Showing your photo — tap retry to generate again</Text>
+              ) : null}
             </View>
           ) : !photo ? (
             <View style={styles.frameCenter}>
@@ -162,6 +183,7 @@ const styles = StyleSheet.create({
   },
   frameCenter: { alignItems: "center", gap: spacing.md },
   processingText: { fontFamily: fonts.sans, fontSize: 13, color: colors.onSurfaceInverse, letterSpacing: 0.5 },
+  processingSub: { fontFamily: fonts.sans, fontSize: 11, color: "rgba(251,251,249,0.7)" },
   resultBadge: { position: "absolute", bottom: spacing.lg, left: spacing.lg, right: spacing.lg, gap: 4 },
   badgeLabel: { fontFamily: fonts.sansMedium, fontSize: 10, letterSpacing: 2, color: "rgba(251,251,249,0.75)" },
   badgeTitle: { fontFamily: fonts.display, fontSize: 28, color: colors.onSurfaceInverse },

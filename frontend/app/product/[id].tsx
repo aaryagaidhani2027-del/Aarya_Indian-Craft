@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
-  FlatList,
+  Animated,
   Pressable,
   ActivityIndicator,
   useWindowDimensions,
@@ -13,6 +13,7 @@ import { Image } from "expo-image";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 
 import { api, media, Jacket, Selection, INR_TO_USD } from "@/src/api";
 import { colors, fonts, spacing } from "@/src/theme";
@@ -30,6 +31,65 @@ function seedSelection(j: Jacket): Selection {
   };
 }
 
+function FlippableJacket({
+  front,
+  reverse,
+  w,
+  h,
+}: {
+  front: string;
+  reverse: string;
+  w: number;
+  h: number;
+}) {
+  const [flipped, setFlipped] = useState(false);
+  const anim = useRef(new Animated.Value(0)).current;
+
+  const flip = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const to = flipped ? 0 : 1;
+    Animated.spring(anim, { toValue: to, useNativeDriver: true, friction: 9, tension: 12 }).start();
+    setFlipped(!flipped);
+  };
+
+  const frontRotate = anim.interpolate({ inputRange: [0, 1], outputRange: ["0deg", "180deg"] });
+  const backRotate = anim.interpolate({ inputRange: [0, 1], outputRange: ["180deg", "360deg"] });
+
+  return (
+    <View style={{ width: w, height: h, backgroundColor: colors.surfaceSecondary }}>
+      <Animated.View
+        style={[
+          StyleSheet.absoluteFill,
+          { backfaceVisibility: "hidden", transform: [{ perspective: 1200 }, { rotateY: frontRotate }] },
+        ]}
+      >
+        <Image source={{ uri: media(front) }} style={{ width: "100%", height: "100%" }} contentFit="cover" transition={200} />
+      </Animated.View>
+      <Animated.View
+        style={[
+          StyleSheet.absoluteFill,
+          { backfaceVisibility: "hidden", transform: [{ perspective: 1200 }, { rotateY: backRotate }] },
+        ]}
+      >
+        <Image source={{ uri: media(reverse) }} style={{ width: "100%", height: "100%" }} contentFit="cover" transition={200} />
+      </Animated.View>
+
+      <View style={flipStyles.sideLabel} pointerEvents="none">
+        <Text style={flipStyles.sideLabelText}>{flipped ? "REVERSE" : "FRONT"}</Text>
+      </View>
+
+      <Pressable
+        testID="flip-jacket-button"
+        onPress={flip}
+        style={({ pressed }) => [flipStyles.flipBtn, pressed && { opacity: 0.85 }]}
+      >
+        <Feather name="refresh-cw" size={14} color={colors.onSurfaceInverse} />
+        <Text style={flipStyles.flipText}>ONE JACKET · TWO WORLDS</Text>
+      </Pressable>
+    </View>
+  );
+}
+
 export default function Product() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
@@ -39,7 +99,6 @@ export default function Product() {
 
   const [jacket, setJacket] = useState<Jacket | null>(null);
   const [loading, setLoading] = useState(true);
-  const [gallery, setGallery] = useState(0);
   const [openPassport, setOpenPassport] = useState(true);
 
   useEffect(() => {
@@ -54,7 +113,6 @@ export default function Product() {
     );
   }
 
-  const images = [jacket.image, jacket.front_image, jacket.reverse_image, jacket.detail_image];
   const galleryH = width * 1.2;
 
   const makeItYours = () => {
@@ -76,36 +134,11 @@ export default function Product() {
   return (
     <View style={styles.root}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
-        {/* Gallery */}
+        {/* Flippable hero — one jacket, two worlds */}
         <View style={{ height: galleryH }}>
-          <FlatList
-            data={images}
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            keyExtractor={(_, i) => String(i)}
-            onMomentumScrollEnd={(e) =>
-              setGallery(Math.round(e.nativeEvent.contentOffset.x / width))
-            }
-            renderItem={({ item }) => (
-              <Image
-                source={{ uri: media(item) }}
-                style={{ width, height: galleryH }}
-                contentFit="cover"
-                transition={300}
-              />
-            )}
-          />
+          <FlippableJacket front={jacket.front_image} reverse={jacket.reverse_image} w={width} h={galleryH} />
           <View style={[styles.galleryTop, { top: insets.top }]}>
             <BackHeader />
-          </View>
-          <View style={styles.dots}>
-            {images.map((_, i) => (
-              <View
-                key={i}
-                style={[styles.dot, { backgroundColor: i === gallery ? colors.onSurface : colors.brandTertiary }]}
-              />
-            ))}
           </View>
         </View>
 
@@ -168,6 +201,41 @@ export default function Product() {
     </View>
   );
 }
+
+const flipStyles = StyleSheet.create({
+  sideLabel: {
+    position: "absolute",
+    top: 60,
+    right: spacing.lg,
+    backgroundColor: "rgba(28,28,26,0.85)",
+    paddingHorizontal: spacing.md,
+    paddingVertical: 6,
+  },
+  sideLabelText: {
+    fontFamily: fonts.sansMedium,
+    fontSize: 10,
+    letterSpacing: 2,
+    color: colors.onSurfaceInverse,
+  },
+  flipBtn: {
+    position: "absolute",
+    bottom: spacing.lg,
+    alignSelf: "center",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    backgroundColor: colors.brand,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderRadius: 999,
+  },
+  flipText: {
+    fontFamily: fonts.sansMedium,
+    fontSize: 11,
+    letterSpacing: 1.5,
+    color: colors.onSurfaceInverse,
+  },
+});
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.surface },

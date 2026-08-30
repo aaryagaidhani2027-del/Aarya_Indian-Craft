@@ -38,6 +38,14 @@ UNDERSTAND → BUY. Hackathon MVP — a spectacular working golden path over bre
 - Backend 17/17 pytest passed. Frontend golden path passed end-to-end (testing agent iteration 1).
 - Fixed: INR_TO_USD import ($ NaN on catalogue/checkout).
 
+## Added (2026-06, iteration 2)
+- Reversible Preview: one-tap 3D flip (rotateY, backfaceVisibility faces) on the product page hero —
+  FRONT ⇄ REVERSE with matching side label + "ONE JACKET · TWO WORLDS" button. (`product/[id].tsx`)
+- Real AI Try-On: `POST /api/visualise` takes the user's photo (base64) + current selection and uses
+  Gemini Nano Banana image editing to dress the same person in the exact custom jacket, saved and served
+  from `/api/media/{name}`. Visualise screen now calls it live (with graceful fallback to the framed photo
+  on failure). Verified producing a correct on-body indigo geometric bomber. (`server.py`, `visualise.tsx`)
+
 ## Backlog / not built (intentional per brief)
 - P2: auth, admin, artisan onboarding, logistics, real payments, full marketplace, social — out of scope.
 - Polish: Cormorant web font OTS fallback (web-only; loads on native).
