@@ -9,12 +9,20 @@ export const API = `${BASE}/api`;
 export const media = (name: string) => `${API}/media/${name}`;
 
 async function request(path: string, options?: RequestInit) {
-  const res = await fetch(`${API}${path}`, {
-    headers: { "Content-Type": "application/json" },
-    ...options,
-  });
-  if (!res.ok) throw new Error(`${res.status}`);
-  return res.json();
+  // A bounded request keeps demo screens from waiting forever if the backend is offline.
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10_000);
+  try {
+    const res = await fetch(`${API}${path}`, {
+      headers: { "Content-Type": "application/json" },
+      ...options,
+      signal: options?.signal ?? controller.signal,
+    });
+    if (!res.ok) throw new Error(`${res.status}`);
+    return res.json();
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 export const api = {
