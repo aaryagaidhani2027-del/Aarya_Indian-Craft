@@ -1,0 +1,42 @@
+{
+  "summary": "First test iteration for the OLD CRAFT. NEW LANGUAGE. fashion prototype. Backend: 17/17 pytest tests passed on the public URL — jackets list + filter, hero jacket, atelier options, valid compute (₹8500, 96, makeable=true), invalid compute (bomber+patchwork → 42, makeable=false, conflict with fix), full-stack pricing (patchwork+statement+personal+indigo = ₹15400), rust special-fabric addition, DNA questions/result (deterministic quiet_architect with 3 recommendations), craft-story (narration NOT exposed), audio status configured=true, audio streamed as audio/mpeg, media/hero_male returns image via redirect, checkout returns order_id + delivery_estimate_days = production_days + 5. Frontend: full mobile golden path passed — Landing (OLD CRAFT. NEW LANGUAGE. + both CTAs) → DNA 5-question flow → DNA-result showing THE QUIET ARCHITECT + recs → Landing → EXPLORE THE JACKET → product j01 → MAKE IT YOURS → Atelier → set bomber+patchwork → madeability 42% + LET AI FIX IT visible → apply fix → 96% restored → Visualise → Continue to Checkout → size M → BUY MY JACKET → confirmation with order id + 26-day delivery. Catalogue filter chips work (All/Minimal/Contemporary/Statement/Experimental) — Minimal correctly shows 3 pieces. Craft-story audio play button toggled to pause icon (ElevenLabs MP3 served). One user-visible bug found: catalogue product cards display '$ NaN' for USD price because INR_TO_USD is imported from '@/src/api' but it is only exported from '@/src/theme'. Same broken import exists in checkout.tsx fallback path.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "Catalogue card USD price",
+        "issue": "Cards display '$ NaN' because INR_TO_USD is imported from '@/src/api' (unexported) instead of '@/src/theme'. Fix: change import in /app/frontend/app/catalogue.tsx line 15 and /app/frontend/app/checkout.tsx line 14 to import { INR_TO_USD } from '@/src/theme' (or re-export it from src/api.ts). Reference: /app/frontend/app/catalogue.tsx:15,125 and /app/frontend/app/checkout.tsx:14,32.",
+        "testID": "n/a",
+        "priority": "HIGH"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "All screens",
+        "issues": [
+          "Cormorant TTF fonts return OTS parsing errors on web preview (invalid sfntVersion 168430090 = ASCII '\\n\\n\\n\\n') — Expo's `?unstable_path=` static handler is returning HTML/JSON instead of the raw TTF bytes. Fonts fall back to system serif, so branding is degraded on web. Consider hosting fonts via expo-font's asset pipeline or using Google Fonts CDN as web fallback. Not blocking any flow."
+        ]
+      }
+    ],
+    "react_native_issues": []
+  },
+  "test_report_links": ["/app/backend/tests/backend_test.py", "/app/test_reports/pytest/results.xml"],
+  "action_items": [
+    "Fix broken INR_TO_USD import in /app/frontend/app/catalogue.tsx (line 15) and /app/frontend/app/checkout.tsx (line 14). Either import it from '@/src/theme' or re-export it from '@/src/api.ts'. Currently catalogue shows '$ NaN' for every jacket card.",
+    "(Optional/polish) Cormorant custom fonts are failing to load on the web preview (OTS parsing error). Verify the font pipeline for Expo web — currently the display type falls back to a serif system font."
+  ],
+  "critical_code_review_comments": [
+    "Backend server.py is clean, all endpoints prefixed with /api, no ObjectId leakage (checkout stores doc in mongo but the response returned to the client is a fresh dict). Consider not returning MongoDB `_id` if the /api/checkout response ever changes to `req.dict() | result` — currently safe.",
+    "Frontend DualPrice consumers should either receive `total_usd` from the backend or derive it via a single shared helper. Currently three call sites (catalogue, checkout, atelier) each compute USD independently — the catalogue path is broken because of the bad INR_TO_USD import."
+  ],
+  "updated_files": ["/app/backend/tests/backend_test.py"],
+  "success_rate": {"backend": "100%", "frontend": "~92% (golden path + catalogue filter + audio all pass; USD label broken on catalogue cards)"},
+  "seed_data_creation": "One TEST_ prefixed order was written to Mongo during test_checkout_returns_order (payload prefixed with 'TEST_' for identification).",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Backend base URL from EXPO_PUBLIC_BACKEND_URL. Pytest suite at /app/backend/tests/backend_test.py covers all endpoints in the request. Golden path Playwright flow used mobile viewport 390x844 and these testIDs: hero-title, discover-dna-cta, explore-jacket-cta, dna-option-{id}, make-it-yours (product page has visible 'MAKE IT YOURS' button), atelier-cat-{key}, atelier-opt-{key}-{id}, madeability-score, madeability-conflict, let-ai-fix-it, atelier-continue-cta, size-M, buy-jacket-button, order-confirmation, audio-play-button. After main agent fixes the INR_TO_USD import, re-run the Minimal catalogue filter check and verify all cards show a real USD number (e.g. '$ 102') instead of '$ NaN'."
+}

@@ -1,0 +1,183 @@
+{
+  "app_name": "The Atelier (Indian Craft Brand)",
+  "personality": "3 Editorial Mobile LIGHT",
+  "personality_one_liner": "A quiet, cinematic space where traditional Indian craft meets global contemporary minimalism.",
+  "color": {
+    "surface": "#FBFBF9",
+    "onSurface": "#1C1C1A",
+    "surfaceSecondary": "#F2F1EC",
+    "onSurfaceSecondary": "#3A3A36",
+    "surfaceTertiary": "#E8E6E0",
+    "onSurfaceTertiary": "#5C5C56",
+    "surfaceInverse": "#1C1C1A",
+    "onSurfaceInverse": "#FBFBF9",
+    "brand": "#1C1C1A",
+    "brandPrimary": "#1C1C1A",
+    "onBrandPrimary": "#FBFBF9",
+    "brandSecondary": "#8C857B",
+    "onBrandSecondary": "#FBFBF9",
+    "brandTertiary": "#D9D4CD",
+    "onBrandTertiary": "#1C1C1A",
+    "success": "#4A5D4E",
+    "onSuccess": "#FBFBF9",
+    "warning": "#C28F5B",
+    "onWarning": "#1C1C1A",
+    "error": "#8B4545",
+    "onError": "#FBFBF9",
+    "border": "#E8E6E0",
+    "borderStrong": "#1C1C1A",
+    "divider": "#E8E6E0"
+  },
+  "typography": {
+    "displayFontFamily": "Cormorant Garamond",
+    "textFontFamily": "Satoshi",
+    "scale": {
+      "sm": 12,
+      "base": 14,
+      "lg": 16,
+      "xl": 20,
+      "2xl": 24
+    }
+  },
+  "spacing": {
+    "rule": "Generous magazine-like breathing room. Use xl/2xl between distinct editorial sections. Keep padding deliberate. Avoid dense clutter.",
+    "xs": 4,
+    "sm": 8,
+    "md": 12,
+    "lg": 16,
+    "xl": 24,
+    "2xl": 32,
+    "3xl": 48
+  },
+  "radius_tokens": {
+    "sm": 0,
+    "md": 4,
+    "lg": 8,
+    "pill": 999
+  },
+  "shadow_tier": 0,
+  "navigation": "stack_only",
+  "icon_set": "Feather",
+  "glassmorphism": {
+    "enabled": false,
+    "do's": [
+      "Use solid surface or surfaceSecondary instead of glassmorphism, staying true to the Editorial personality.",
+      "Apply gradient-to-dark scrims exclusively behind text on images for readability."
+    ],
+    "dont's": [
+      "Do not use blur or frosted glass; the brand demands a matte, natural, tactile editorial feel without digital synthetic effects."
+    ]
+  },
+  "platform_libraries": {
+    "glass": {
+      "ios": "expo-glass-effect",
+      "android": "expo-blur",
+      "low_end_android_fallback": "solid surfaceSecondary"
+    },
+    "image": "expo-image",
+    "blur": "expo-blur",
+    "bottom_sheet": "@gorhom/bottom-sheet",
+    "animation": "react-native-reanimated",
+    "gesture": "react-native-gesture-handler"
+  },
+  "screens": [
+    {
+      "name": "Home / Discover",
+      "purpose": "A cinematic entry introducing the brand's aesthetic and leading into the core journey.",
+      "states": {
+        "loading": "Subtle minimal skeleton loader with a central hairline spinner.",
+        "empty": "Not applicable for Home.",
+        "error": "Elegant text message 'Unable to load catalogue.' with a quiet retry text button."
+      },
+      "layout": "Full-bleed cinematic hero image occupying 75% of the viewport. Apply a gradient scrim (transparent to 80% surfaceInverse) at the bottom. Elegant serif headline layered over the scrim. Below the fold, present the 'Design DNA Questionnaire' as a standalone editorial card with generous padding."
+    },
+    {
+      "name": "Design DNA Questionnaire",
+      "purpose": "Help the user find their aesthetic through 5 highly visual swipe questions.",
+      "states": {
+        "loading": "Spinner centered on a pure surface canvas.",
+        "empty": "No questions available illustration.",
+        "error": "Error loading questionnaire with a Retry button."
+      },
+      "layout": "Full-screen interactive flow. Top header with a minimal hairline progress bar. Question in serif centered at the top. The rest of the screen is a swipeable image card stack (Tinder-like but elegant) with a 'Yes/No' or 'Choose A/Choose B' interaction model. Minimalist labels."
+    },
+    {
+      "name": "Jacket Discovery Catalogue",
+      "purpose": "Browse the collection of reversible quilted jackets.",
+      "states": {
+        "loading": "2-column grid of surfaceSecondary skeleton boxes.",
+        "empty": "No jackets match your filters. Try clearing them.",
+        "error": "Failed to load the collection."
+      },
+      "layout": "Sticky top bar with horizontally scrolling minimal filter chips (pill radius, outlined or solid surfaceTertiary). Below, a 2-column grid for products. High-aspect-ratio (4:5) images. Below each image: product name in sans-serif base size, price in dual currency (₹ and $) separated by a dot."
+    },
+    {
+      "name": "Product Page (PDP)",
+      "purpose": "Deep dive into the hero product, exploring the craft story and initiating customization.",
+      "states": {
+        "loading": "Full bleed skeleton loader for image, linear skeletons for text.",
+        "empty": "Product unavailable.",
+        "error": "Failed to fetch product details."
+      },
+      "layout": "Edge-to-edge swipeable gallery at the top. Title in elegant serif, dual pricing. An 'AI Design Moment' section presented as a magazine quote block. Expandable accordion lists for 'Product Passport' and specs. Sticky bottom CTA ('Customise in The Atelier') pinned in a white bottom container."
+    },
+    {
+      "name": "The Atelier (Customisation)",
+      "purpose": "Interactive studio to customize silhouette, quilt, colour, and craft intensity with a live preview.",
+      "states": {
+        "loading": "Spinner over the silhouette outline.",
+        "empty": "Customization options not loaded.",
+        "error": "Failed to load the studio."
+      },
+      "layout": "Top 60% of screen: Large image of the jacket updating in real-time. Bottom 40%: A horizontal scrolling category selector (Silhouette, Quilt, Colour, Craft Intensity) sitting directly above a horizontally scrolling list of circular or square texture swatches. Live pricing updates on the sticky bottom edge. The 'Made-ability compatibility meter' is rendered as a minimal horizontal progress line under the jacket image."
+    },
+    {
+      "name": "Craft Story (Audio Player)",
+      "purpose": "Listen to the artisan's journey behind the quilt pattern.",
+      "states": {
+        "loading": "Loading audio track...",
+        "empty": "No story available for this piece.",
+        "error": "Unable to play audio."
+      },
+      "layout": "Minimalist overlay or dedicated modal. A large portrait of the artisan or a macro texture shot. A singular play/pause button (Feather icon). A thin hairline horizontal scrubber for the timeline. Typographic emphasis on the artisan's name in serif."
+    }
+  ],
+  "images": {
+    "hero_cinematic": {
+      "url": "https://images.unsplash.com/photo-1673276628202-737bf3020ac2?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzR8MHwxfHNlYXJjaHwzfHxxdWlsdGVkJTIwamFja2V0JTIwbWluaW1hbCUyMGZhc2hpb258ZW58MHx8fHwxNzg4MDc3MDcyfDA&ixlib=rb-4.1.0&q=85",
+      "alt": "Man in a white elegant quilted coat standing in front of a dark blue cinematic background"
+    },
+    "catalogue_jacket_1": {
+      "url": "https://images.unsplash.com/photo-1633293822049-dee1b40a99c5?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzR8MHwxfHNlYXJjaHwyfHxxdWlsdGVkJTIwamFja2V0JTIwbWluaW1hbCUyMGZhc2hpb258ZW58MHx8fHwxNzg4MDc3MDcyfDA&ixlib=rb-4.1.0&q=85",
+      "alt": "Man in a blue quilted jacket leaning against a white wall"
+    },
+    "catalogue_jacket_2": {
+      "url": "https://images.unsplash.com/photo-1614110620182-f6cdc3dafd4a?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzR8MHwxfHNlYXJjaHw0fHxxdWlsdGVkJTIwamFja2V0JTIwbWluaW1hbCUyMGZhc2hpb258ZW58MHx8fHwxNzg4MDc3MDcyfDA&ixlib=rb-4.1.0&q=85",
+      "alt": "Minimalist black quilted jacket on model"
+    },
+    "atelier_swatch_1": {
+      "url": "https://images.unsplash.com/photo-1643313260651-9c335822ecde?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzOTB8MHwxfHNlYXJjaHwzfHxhYnN0cmFjdCUyMHdhcm0lMjBpdm9yeSUyMHRleHRpbGUlMjB0ZXh0dXJlfGVufDB8fHx8MTc4ODA3NzA3Mnww&ixlib=rb-4.1.0&q=85",
+      "alt": "Close up of a warm ivory quilted knitted texture"
+    },
+    "atelier_swatch_2": {
+      "url": "https://images.unsplash.com/photo-1528458909336-e7a0adfed0a5?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzOTB8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMHdhcm0lMjBpdm9yeSUyMHRleHRpbGUlMjB0ZXh0dXJlfGVufDB8fHx8MTc4ODA3NzA3Mnww&ixlib=rb-4.1.0&q=85",
+      "alt": "Beige linen fabric texture background"
+    },
+    "atelier_swatch_3": {
+      "url": "https://images.unsplash.com/photo-1686806374120-e7ae3f19801d?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzOTB8MHwxfHNlYXJjaHwyfHxhYnN0cmFjdCUyMHdhcm0lMjBpdm9yeSUyMHRleHRpbGUlMjB0ZXh0dXJlfGVufDB8fHx8MTc4ODA3NzA3Mnww&ixlib=rb-4.1.0&q=85",
+      "alt": "Close up of a beige craft fabric textured background"
+    }
+  },
+  "instructions_to_main_agent": [
+    "Load 'Cormorant Garamond' (serif) and 'Satoshi' (sans-serif) fonts explicitly via expo-font. Do not use generic system fonts or google-fonts wrappers.",
+    "Implement the 'Editorial Mobile LIGHT' aesthetics. Preserve high contrast: use pure ink black against porcelain warm white.",
+    "Ensure generous xl/2xl vertical padding between layout sections to mimic a high-end fashion magazine layout.",
+    "Avoid glassmorphism completely. Instead, rely on solid backgrounds, hairline dividers, and stark negative space.",
+    "Whenever overlaying text on images (like the Home Hero), apply a 3-stop vertical gradient scrim using expo-linear-gradient (transparent to 80% surfaceInverse) to ensure text legibility.",
+    "Render all prices explicitly in both currencies with a subtle separator, e.g., '₹ 12,500 • $ 150'. Use sans-serif for numbers to maintain readability.",
+    "For the Made-ability compatibility meter, build a minimal un-styled horizontal line (1px-2px height) or a sophisticated minimal scale rather than a generic tech progress bar.",
+    "All navigation should be stack-only (linear flow) per the luxury/editorial preference, to avoid clutter from a persistent tab bar.",
+    "Avoid rounded, bubbly corners. Stick to the provided radius tokens (sm:0, md:4, lg:8) to keep the layout feeling sharp and premium.",
+    "In the Atelier screen, implement a two-pane layout: a large jacket visual at the top half, and horizontal scrolling selector tabs (Silhouette, Quilt, Colour) at the bottom half."
+  ]
+}
