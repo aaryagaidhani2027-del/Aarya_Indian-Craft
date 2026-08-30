@@ -60,13 +60,24 @@ export default function Atelier() {
   const { selection, setSelection, setCompute, activeJacket } = useDesign();
 
   const [options, setOptions] = useState<Options | null>(null);
+  const [optionsError, setOptionsError] = useState(false);
   const [activeCat, setActiveCat] = useState<(typeof CATS)[number]["key"]>("silhouette");
   const [result, setResult] = useState<ComputeResult | null>(null);
   const [computing, setComputing] = useState(false);
   const meter = useRef(new Animated.Value(0)).current;
 
+  const loadOptions = () => {
+    setOptionsError(false);
+    api.get("/atelier/options")
+      .then((data) => {
+        setOptions(data);
+        setOptionsError(false);
+      })
+      .catch(() => setOptionsError(true));
+  };
+
   useEffect(() => {
-    api.get("/atelier/options").then(setOptions).catch(() => {});
+    loadOptions();
   }, []);
 
   // recompute (debounced) whenever selection changes
@@ -110,7 +121,14 @@ export default function Atelier() {
   if (!options) {
     return (
       <View style={[styles.root, styles.center, { paddingTop: insets.top }]}>
-        <ActivityIndicator color={colors.onSurface} />
+        {optionsError ? (
+          <>
+            <Text style={styles.errorText}>The Atelier is temporarily unavailable.</Text>
+            <PrimaryButton label="TRY AGAIN" onPress={loadOptions} />
+          </>
+        ) : (
+          <ActivityIndicator color={colors.onSurface} />
+        )}
       </View>
     );
   }
@@ -329,7 +347,8 @@ export default function Atelier() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.surface },
-  center: { alignItems: "center", justifyContent: "center" },
+  center: { alignItems: "center", justifyContent: "center", paddingHorizontal: spacing.lg },
+  errorText: { fontFamily: fonts.sans, fontSize: 15, lineHeight: 23, color: colors.onSurfaceSecondary, textAlign: "center", marginBottom: spacing.lg },
   visual: {
     height: "42%",
     backgroundColor: colors.surfaceSecondary,
