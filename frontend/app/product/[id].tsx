@@ -102,15 +102,30 @@ export default function Product() {
   const [jacket, setJacket] = useState<Jacket | null>(null);
   const [loading, setLoading] = useState(true);
   const [openPassport, setOpenPassport] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
-    api.get(`/jackets/${id}`).then(setJacket).catch(() => {}).finally(() => setLoading(false));
+    setLoading(true);
+    setLoadError(false);
+    api.get(`/jackets/${id}`).then(setJacket).catch(() => setLoadError(true)).finally(() => setLoading(false));
   }, [id]);
 
-  if (loading || !jacket) {
+  if (loading) {
     return (
       <View style={[styles.root, styles.center, { paddingTop: insets.top }]}>
         <ActivityIndicator color={colors.onSurface} />
+      </View>
+    );
+  }
+
+  if (!jacket) {
+    return (
+      <View style={[styles.root, styles.center, { paddingTop: insets.top }]}>
+        <BackHeader title="Product" />
+        <Text style={styles.errorText}>
+          {loadError ? "This piece is temporarily unavailable." : "We could not find this piece."}
+        </Text>
+        <PrimaryButton label="BACK TO COLLECTION" onPress={() => router.replace("/catalogue")} />
       </View>
     );
   }
@@ -196,7 +211,7 @@ export default function Product() {
 
           <Pressable
             testID="craft-story-link"
-            onPress={() => router.push("/craft-story")}
+            onPress={() => router.push({ pathname: "/craft-story", params: { craft: jacket.craft_type } })}
             style={styles.craftLink}
           >
             <Feather name="headphones" size={16} color={colors.onSurface} />
@@ -252,6 +267,7 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.surface },
   center: { alignItems: "center", justifyContent: "center" },
   galleryTop: { position: "absolute", left: 0, right: 0 },
+  errorText: { fontFamily: fonts.sans, fontSize: 15, color: colors.onSurfaceSecondary, textAlign: "center", marginBottom: spacing.lg },
   dots: {
     position: "absolute",
     bottom: spacing.lg,
