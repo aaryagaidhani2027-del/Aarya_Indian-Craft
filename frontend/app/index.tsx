@@ -255,7 +255,7 @@ export default function Landing() {
         {/* EXPLORE COLLECTION */}
         <View style={[styles.section, { paddingBottom: insets.bottom + spacing.xxxl }]}>
           <Eyebrow text="The collection" />
-          <Text style={styles.sectionTitle}>Ten pieces.{"\n"}Four craft languages.</Text>
+          <Text style={styles.sectionTitle}>Nine pieces.{"\n"}Three craft languages.</Text>
           <Text style={styles.sectionBody}>
             A tightly curated collection for men and women — one brand, many crafts,
             wearable from Mumbai to Tokyo.
