@@ -66,15 +66,32 @@ def compute_price(selection: dict) -> dict:
 # MADE-ABILITY
 # --------------------------------------------------------------------------- #
 CONFLICT_RULES = [
+    # -- Quilting-specific conflicts --
     {"when": {"quilt": "patchwork", "silhouette": "bomber"},
-     "message": "Patchwork panels can't sit cleanly on a cropped bomber — the seams fight the short hem.",
+     "message": "Patchwork construction conflicts with the selected cropped silhouette — the seams fight the short hem.",
      "fix": {"silhouette": "overshirt"}, "fix_label": "Switch to the Overshirt silhouette"},
     {"when": {"quilt": "organic", "craft": "statement"},
      "message": "Organic quilting loses its softness when pushed to a full Statement craft intensity.",
      "fix": {"craft": "conversation"}, "fix_label": "Ease craft to Conversation"},
+    {"when": {"quilt": "patchwork", "craft": "whisper"},
+     "message": "Patchwork demands visible handwork — a Whisper finish contradicts the technique.",
+     "fix": {"craft": "conversation"}, "fix_label": "Raise to Conversation level"},
+    # -- Colour + craft conflicts --
     {"when": {"colour": "ivory", "craft": "statement"},
      "message": "A Statement craft panel bleeds visibly on warm ivory fabric during hand-finishing.",
      "fix": {"colour": "sand"}, "fix_label": "Move to pale Sand instead"},
+    # -- Ajrakh-specific conflicts --
+    {"when": {"quilt": "abstract", "silhouette": "bomber"},
+     "message": "Abstract block printing needs surface area to breathe — a cropped bomber cuts the pattern short.",
+     "fix": {"silhouette": "overshirt"}, "fix_label": "Switch to Overshirt"},
+    # -- Kantha-specific conflicts --
+    {"when": {"quilt": "geometric", "craft": "statement"},
+     "message": "Geometric quilting with full Statement intensity overwhelms the fine Kantha stitch language.",
+     "fix": {"quilt": "organic"}, "fix_label": "Use organic stitch channels"},
+    # -- Universal conflicts --
+    {"when": {"colour": "black", "craft": "statement"},
+     "message": "Statement craft detail is difficult to read against deep black fabric — the contrast disappears.",
+     "fix": {"colour": "ivory"}, "fix_label": "Switch to warm Ivory"},
 ]
 SOFT_DEDUCTIONS = [{"when": {"quilt": "abstract"}, "amount": 4}, {"when": {"personal": "symbol"}, "amount": 2}]
 
@@ -177,6 +194,10 @@ def compute_dna(answers: dict) -> dict:
             scores[p] += 1
     best = max(DNA_PROFILES, key=lambda p: (scores[p], -list(DNA_PROFILES).index(p)))
     profile = dict(DNA_PROFILES[best])
+    profile["profile_key"] = best
+    # Derive recommended_craft from the primary recommended jacket
+    primary_jacket = next((j for j in JACKETS if j["id"] == profile["recommendations"][0]), JACKETS[0])
+    profile["recommended_craft"] = primary_jacket["craft_type"]
     profile["recommended_jackets"] = [
         {**j, "reason": _recommendation_reason(profile, j)} for j in JACKETS if j["id"] in profile["recommendations"]]
     return profile
@@ -319,3 +340,152 @@ CRAFT_STORY = {
                      "origin": "West Bengal, India", "production_time": "20 days"},
     },
 }
+
+# --------------------------------------------------------------------------- #
+# CRAFT-SPECIFIC TECHNIQUE LABELS
+# --------------------------------------------------------------------------- #
+# Each craft speaks its own vocabulary for the same underlying quilt option.
+# The Atelier UI reads these to relabel tabs and swatches per craft.
+CRAFT_TECHNIQUES = {
+    "Quilting": {
+        "tab": "Pattern",
+        "geometric": {"label": "Geometric", "descriptor": "clean geometric quilting"},
+        "patchwork": {"label": "Patchwork", "descriptor": "considered patchwork panels"},
+        "abstract": {"label": "Abstract", "descriptor": "free abstract stitching"},
+        "organic": {"label": "Organic", "descriptor": "soft organic channels"},
+    },
+    "Ajrakh": {
+        "tab": "Block Print",
+        "geometric": {"label": "Fine Geometry", "descriptor": "precise geometric block print"},
+        "patchwork": {"label": "Dense Border", "descriptor": "dense border block print"},
+        "abstract": {"label": "Scattered Motif", "descriptor": "scattered motif block print"},
+        "organic": {"label": "Large Repeat", "descriptor": "large repeat block print"},
+    },
+    "Kantha": {
+        "tab": "Stitch",
+        "geometric": {"label": "Running Stitch", "descriptor": "fine running stitch"},
+        "patchwork": {"label": "Dense Stitch", "descriptor": "dense layered stitching"},
+        "abstract": {"label": "Free Stitch", "descriptor": "free-form narrative stitch"},
+        "organic": {"label": "Narrative Stitch", "descriptor": "story-telling stitch pattern"},
+    },
+}
+
+# --------------------------------------------------------------------------- #
+# WHY THIS CRAFT? — deterministic craft explanations
+# --------------------------------------------------------------------------- #
+# Maps DNA profile + recommended craft to a short editorial explanation.
+# Used by the /dna/craft-explanation endpoint and displayed on the DNA Result.
+CRAFT_EXPLANATIONS = {
+    ("quiet_architect", "Quilting"): (
+        "Your preference for restrained forms and tactile surfaces maps naturally to quilting's "
+        "honest geometry — clean stitch lines, architectural structure, and a quiet material "
+        "language that reveals itself slowly."
+    ),
+    ("quiet_architect", "Ajrakh"): (
+        "Your love of structured, minimal forms finds an unexpected counterpart in Ajrakh's "
+        "disciplined geometry — every block placement is deliberate, every colour layer purposeful."
+    ),
+    ("quiet_architect", "Kantha"): (
+        "Your tactile, detail-oriented sensibility connects with Kantha's intimate handwork — "
+        "each stitch a quiet, deliberate mark that rewards close attention."
+    ),
+    ("modern_romantic", "Quilting"): (
+        "Your drawn to softness and fluidity translates into quilting's organic channels — "
+        "where soft cotton layers create warmth without weight."
+    ),
+    ("modern_romantic", "Ajrakh"): (
+        "Your romantic eye for colour and rhythm pairs beautifully with Ajrakh's layered "
+        "indigo and madder — print as poetry, built layer by layer."
+    ),
+    ("modern_romantic", "Kantha"): (
+        "Your love of handcrafted intimacy and soft, flowing lines aligns with Kantha's "
+        "stitched storytelling — each row of running stitch a quiet, organic rhythm."
+    ),
+    ("bold_expressive", "Quilting"): (
+        "Your bold, expressive palette demands a craft with presence — quilting's geometric "
+        "patterns give your style a structured, architectural edge."
+    ),
+    ("bold_expressive", "Ajrakh"): (
+        "Your preference for bold rhythm and expressive detail maps naturally to Ajrakh's "
+        "geometric block-print language — centuries-old technique, worn loud and modern."
+    ),
+    ("bold_expressive", "Kantha"): (
+        "Your expressive, earthy style connects with Kantha's visible handwork — bold "
+        "stitching that makes the craft unmistakable from across a room."
+    ),
+    ("raw_purist", "Quilting"): (
+        "Your love of honest materials and visible making finds its match in quilting — "
+        "every stitch is functional, every layer earns its place."
+    ),
+    ("raw_purist", "Ajrakh"): (
+        "Your appreciation for craft that carries time and memory pairs with Ajrakh's "
+        "slow, resist-dye process — each cloth passed through the maker's hands many times."
+    ),
+    ("raw_purist", "Kantha"): (
+        "Your love of honest materials and visible making aligns perfectly with Kantha — "
+        "where every running stitch is a small, human act of holding cloth together."
+    ),
+    ("experimental_voice", "Quilting"): (
+        "Your fearless approach to design meets quilting's infinite pattern possibilities — "
+        "geometric, abstract, organic, each a different language to break rules with."
+    ),
+    ("experimental_voice", "Ajrakh"): (
+        "Your rule-breaking, experimental spirit finds a rich canvas in Ajrakh — where "
+        "centuries-old blocks can be recombined into entirely unexpected patterns."
+    ),
+    ("experimental_voice", "Kantha"): (
+        "Your artful, unexpected instincts connect with Kantha's free-stitch tradition — "
+        "where the hand can wander and every stitch is a small creative decision."
+    ),
+}
+
+# Fallback explanation when profile+craft pair isn't in the explicit map.
+def get_craft_explanation(profile_id: str, craft: str) -> str:
+    """Return a craft explanation for the given DNA profile and recommended craft."""
+    explicit = CRAFT_EXPLANATIONS.get((profile_id, craft))
+    if explicit:
+        return explicit
+    # Generic fallback based on craft alone
+    fallbacks = {
+        "Quilting": (
+            "Your taste profile suggests a preference for structure and tactile detail — "
+            "quilting's honest geometry and architectural stitch lines speak that language."
+        ),
+        "Ajrakh": (
+            "Your taste profile suggests a love of bold pattern and rhythmic detail — "
+            "Ajrakh's geometric block-print tradition translates that energy into wearable form."
+        ),
+        "Kantha": (
+            "Your taste profile suggests an appreciation for handcrafted warmth — "
+            "Kantha's stitched storytelling brings that intimacy into contemporary clothing."
+        ),
+    }
+    return fallbacks.get(craft, "This craft resonates with your design DNA.")
+
+
+def compute_enhanced_madeability(selection: dict, craft_type: str = "Quilting") -> dict:
+    """Extended made-ability with production details and craft-specific context."""
+    base = compute_madeability(selection)
+    # Map quilt id to technique name using craft-specific labels
+    craft_tech = CRAFT_TECHNIQUES.get(craft_type, CRAFT_TECHNIQUES["Quilting"])
+    quilt_id = selection.get("quilt", "geometric")
+    technique_label = craft_tech.get(quilt_id, {}).get("label", "Hand finishing")
+    colour_id = selection.get("colour", "ivory")
+    colour_obj = next((c for c in COLOURS if c["id"] == colour_id), COLOURS[0])
+    craft_obj = next((c for c in CRAFT_INTENSITY if c["id"] == selection.get("craft")), CRAFT_INTENSITY[0])
+    base["technique_label"] = technique_label
+    base["colour_label"] = colour_obj["label"]
+    base["craft_intensity_label"] = craft_obj["label"]
+    base["craft_type"] = craft_type
+    # Production estimate (days) — varies by craft and intensity
+    production_map = {
+        "Quilting": 21, "Ajrakh": 18, "Kantha": 20,
+    }
+    base_days = production_map.get(craft_type, 21)
+    if selection.get("craft") == "statement":
+        base_days += 4
+    elif selection.get("craft") == "whisper":
+        base_days -= 2
+    base["production_days"] = base_days
+    return base
+

@@ -19,6 +19,7 @@ type DnaResult = {
   craft_affinity: string;
   tags: string[];
   recommended_jackets: Jacket[];
+  recommended_craft?: string;
 };
 
 type DesignState = {
@@ -32,6 +33,8 @@ type DesignState = {
   setDna: (d: DnaResult | null) => void;
   size: string;
   setSize: (s: string) => void;
+  profileId: string | null;
+  setProfileId: (id: string | null) => void;
 };
 
 const DesignContext = createContext<DesignState | null>(null);
@@ -43,6 +46,8 @@ export function DesignProvider({ children }: { children: React.ReactNode }) {
   const [dna, setDna] = useState<DnaResult | null>(null);
   const [size, setSize] = useState<string>("M");
 
+  const [profileId, setProfileId] = useState<string | null>(null);
+
   return (
     <DesignContext.Provider
       value={{
@@ -51,6 +56,7 @@ export function DesignProvider({ children }: { children: React.ReactNode }) {
         activeJacket, setActiveJacket,
         dna, setDna,
         size, setSize,
+        profileId, setProfileId,
       }}
     >
       {children}

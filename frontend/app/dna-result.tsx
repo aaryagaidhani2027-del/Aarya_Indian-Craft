@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -12,7 +12,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 
-import { media, INR_TO_USD } from "@/src/api";
+import { api, media, INR_TO_USD } from "@/src/api";
 import { colors, fonts, spacing, radius } from "@/src/theme";
 import { BackHeader, DualPrice, Eyebrow, PrimaryButton, SecondaryButton } from "@/src/ui";
 import { useDesign } from "@/src/store";
@@ -20,12 +20,45 @@ import { useDesign } from "@/src/store";
 export default function DnaResult() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { dna } = useDesign();
+  const { dna, profileId, setProfileId } = useDesign();
   const fade = useRef(new Animated.Value(0)).current;
+
+  // "Why This Craft?" explanation
+  const [craftExplanation, setCraftExplanation] = useState<string | null>(null);
+  const craftFade = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.timing(fade, { toValue: 1, duration: 700, useNativeDriver: true }).start();
   }, [fade]);
+
+  // Fetch "Why This Craft?" explanation once DNA result is available
+  useEffect(() => {
+    if (!dna) return;
+    const craft = dna.recommended_craft ?? dna.craft_affinity?.split(" ")[0] ?? "Quilting";
+    // Map craft_affinity strings to proper craft names
+    const craftMap: Record<string, string> = {
+      "Geometric quilting": "Quilting",
+      "Kantha stitching": "Kantha",
+      "Ajrakh block print": "Ajrakh",
+      "Quilting": "Quilting",
+      "Ajrakh": "Ajrakh",
+      "Kantha": "Kantha",
+    };
+    const craftName = craftMap[craft] ?? craft;
+    const pKey = profileId ?? (dna as any).profile_key ?? "quiet_architect";
+    api
+      .post("/dna/craft-explanation", { profile_id: pKey, craft: craftName })
+      .then((res) => {
+        setCraftExplanation(res.explanation);
+        // Store profile_id for later screens
+        if (!profileId) setProfileId(pKey);
+        // Fade in the explanation
+        Animated.timing(craftFade, { toValue: 1, duration: 600, useNativeDriver: true }).start();
+      })
+      .catch(() => {
+        // Silent fail — section simply won't show
+      });
+  }, [dna, profileId, setProfileId, craftFade]);
 
   if (!dna) {
     return (
@@ -45,6 +78,14 @@ export default function DnaResult() {
     { k: "Craft affinity", v: dna.craft_affinity },
   ];
 
+  const craftName = dna.recommended_craft ?? dna.craft_affinity?.split(" ")[0] ?? "Quilting";
+  const craftMap: Record<string, string> = {
+    "Geometric quilting": "Quilting",
+    "Kantha stitching": "Kantha",
+    "Ajrakh block print": "Ajrakh",
+  };
+  const resolvedCraft = craftMap[craftName] ?? craftName;
+
   return (
     <View style={styles.root}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: insets.bottom + spacing.xxxl }}>
@@ -53,6 +94,7 @@ export default function DnaResult() {
         </View>
 
         <Animated.View style={{ opacity: fade }}>
+          {/* Design DNA Result */}
           <View style={styles.hero}>
             <Eyebrow text="Your design DNA" />
             <Text style={styles.name}>{dna.name}</Text>
@@ -75,6 +117,26 @@ export default function DnaResult() {
               </View>
             ))}
           </View>
+
+          {/* WHY THIS CRAFT? */}
+          <Animated.View style={[styles.craftWhy, { opacity: craftFade }]} testID="why-this-craft">
+            <View style={styles.craftWhyDivider} />
+            <Eyebrow text={`Why ${resolvedCraft}?`} />
+            {craftExplanation ? (
+              <Text style={styles.craftWhyText}>{craftExplanation}</Text>
+            ) : (
+              <Text style={styles.craftWhyText}>
+                Your Design DNA maps naturally to {resolvedCraft.toLowerCase()}'s craft language.
+              </Text>
+            )}
+            <Pressable
+              testID="see-craft-story"
+              onPress={() => router.push({ pathname: "/craft-story", params: { craft: resolvedCraft } })}
+              style={({ pressed }) => [styles.craftWhyLink, pressed && { opacity: 0.6 }]}
+            >
+              <Text style={styles.craftWhyLinkText}>SEE THE CRAFT →</Text>
+            </Pressable>
+          </Animated.View>
 
           {/* AI Recommendation */}
           <View style={styles.recHeader}>
@@ -152,6 +214,37 @@ const styles = StyleSheet.create({
   },
   factKey: { fontFamily: fonts.sans, fontSize: 13, color: colors.onSurfaceTertiary },
   factVal: { fontFamily: fonts.sansMedium, fontSize: 14, color: colors.onSurface },
+
+  // WHY THIS CRAFT?
+  craftWhy: {
+    paddingHorizontal: spacing.lg,
+    marginTop: spacing.xxxl,
+    gap: spacing.sm,
+  },
+  craftWhyDivider: {
+    height: 1,
+    backgroundColor: colors.divider,
+    marginBottom: spacing.sm,
+  },
+  craftWhyText: {
+    fontFamily: fonts.displayMedium,
+    fontSize: 20,
+    lineHeight: 30,
+    color: colors.onSurface,
+    marginTop: spacing.xs,
+  },
+  craftWhyLink: {
+    marginTop: spacing.md,
+    alignSelf: "flex-start",
+  },
+  craftWhyLinkText: {
+    fontFamily: fonts.sansMedium,
+    fontSize: 12,
+    letterSpacing: 2,
+    color: colors.onSurface,
+  },
+
+  // AI Recommendation
   recHeader: { paddingHorizontal: spacing.lg, marginTop: spacing.xxxl, gap: spacing.sm },
   aiBadge: {
     flexDirection: "row",

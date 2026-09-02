@@ -146,12 +146,11 @@ export default function Product() {
   };
 
   const passport = [
-    { k: "Craft", v: jacket.craft },
-    { k: "Technique", v: jacket.technique ?? "Hand-finished" },
-    { k: "Material", v: jacket.material },
-    { k: "Origin", v: "India" },
-    { k: "Maker", v: "40+ artisan collective" },
-    { k: "Production time", v: `${jacket.production_days} days` },
+    { k: "CRAFT", v: jacket.craft_type },
+    { k: "TECHNIQUE", v: jacket.technique ?? "Hand-finished" },
+    { k: "MATERIAL", v: jacket.material },
+    { k: "ORIGIN", v: "India" },
+    { k: "PRODUCTION", v: `${jacket.production_days} days` },
   ];
   const pieceId = `PIECE ${jacket.piece_no ?? "000"} / ${jacket.craft_type.toUpperCase()} / 2026`;
 
@@ -196,23 +195,26 @@ export default function Product() {
             </Text>
           </View>
 
-          {/* Passport accordion */}
+          {/* THE PASSPORT — premium provenance card */}
           <Pressable
             testID="passport-toggle"
             onPress={() => setOpenPassport((v) => !v)}
             style={styles.accHeader}
           >
-            <Text style={styles.accTitle}>PRODUCT PASSPORT</Text>
+            <Text style={styles.accTitle}>THE PASSPORT</Text>
             <Feather name={openPassport ? "minus" : "plus"} size={18} color={colors.onSurface} />
           </Pressable>
           {openPassport ? (
-            <View style={styles.specList}>
+            <View style={styles.passportCard}>
               {passport.map((p) => (
                 <View key={p.k} style={styles.specRow}>
                   <Text style={styles.specKey}>{p.k}</Text>
                   <Text style={styles.specVal}>{p.v}</Text>
                 </View>
               ))}
+              <View style={[styles.pieceBadge, { marginTop: spacing.md }]}>
+                <Text style={styles.pieceText}>{pieceId}</Text>
+              </View>
             </View>
           ) : null}
 
@@ -330,7 +332,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   accTitle: { fontFamily: fonts.sansMedium, fontSize: 12, letterSpacing: 2, color: colors.onSurface },
-  specList: { paddingBottom: spacing.md },
+  passportCard: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.lg,
+    paddingBottom: spacing.md,
+    marginTop: spacing.sm,
+  },
   specRow: {
     flexDirection: "row",
     justifyContent: "space-between",

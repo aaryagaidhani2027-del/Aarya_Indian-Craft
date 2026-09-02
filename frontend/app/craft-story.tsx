@@ -153,31 +153,34 @@ export default function CraftStory() {
           <Text style={styles.bodyText}>{story?.body}</Text>
         </View>
 
-        {/* Passport */}
+        {/* THE PASSPORT — premium provenance card */}
         {story?.passport ? (
           <View style={styles.passport}>
-            <Eyebrow text="Your piece" />
-            <Text style={styles.passportTitle}>Product Passport</Text>
+            <View style={styles.passportDivider} />
+            <Eyebrow text="Provenance" />
+            <Text style={styles.passportTitle}>THE PASSPORT</Text>
+            <View style={styles.passportCard}>
+              {[
+                ["CRAFT", story.passport.craft],
+                ["ORIGIN", story.passport.origin],
+                ["TECHNIQUE", story.passport.technique],
+                ["MATERIAL", story.passport.material],
+                ["PRODUCTION", story.passport.production_time],
+                ...(story.passport.maker ? [["MAKER", story.passport.maker]] : []),
+              ].map(([k, v]) => (
+                <View key={k} style={styles.pRow}>
+                  <Text style={styles.pKey}>{k}</Text>
+                  <Text style={styles.pVal}>{v}</Text>
+                </View>
+              ))}
+            </View>
             <View style={styles.pieceBadge}>
               <Text style={styles.pieceText}>{`PIECE 001 / ${craft.toUpperCase()} / 2026`}</Text>
             </View>
-            {[
-              ["Craft", story.passport.craft],
-              ["Technique", story.passport.technique],
-              ["Material", story.passport.material],
-              ["Origin", story.passport.origin],
-              ["Maker", story.passport.maker],
-              ["Production time", story.passport.production_time],
-            ].filter(([, value]) => Boolean(value)).map(([k, v]) => (
-              <View key={k} style={styles.pRow}>
-                <Text style={styles.pKey}>{k}</Text>
-                <Text style={styles.pVal}>{v}</Text>
-              </View>
-            ))}
           </View>
         ) : null}
 
-        <View style={{ paddingHorizontal: spacing.lg, marginTop: spacing.xxl }}>
+              <View style={{ paddingHorizontal: spacing.lg, marginTop: spacing.xxl }}>
           <PrimaryButton testID="craft-customise-cta" label="MAKE IT YOURS" onPress={() => router.push("/atelier")} />
         </View>
       </ScrollView>
@@ -234,11 +237,20 @@ const styles = StyleSheet.create({
     marginTop: spacing.xxxl,
     marginHorizontal: spacing.lg,
     paddingTop: spacing.xl,
-    borderTopWidth: 1,
-    borderTopColor: colors.divider,
     gap: spacing.sm,
   },
-  passportTitle: { fontFamily: fonts.display, fontSize: 30, color: colors.onSurface, marginBottom: spacing.md },
+  passportDivider: {
+    height: 1,
+    backgroundColor: colors.divider,
+    marginBottom: spacing.sm,
+  },
+  passportTitle: { fontFamily: fonts.display, fontSize: 30, color: colors.onSurface, marginTop: spacing.xs, marginBottom: spacing.md },
+  passportCard: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.lg,
+    gap: 0,
+  },
   pRow: { flexDirection: "row", justifyContent: "space-between", paddingVertical: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.divider },
   pKey: { fontFamily: fonts.sans, fontSize: 13, color: colors.onSurfaceTertiary },
   pVal: { fontFamily: fonts.sansMedium, fontSize: 13, color: colors.onSurface, maxWidth: "60%", textAlign: "right" },

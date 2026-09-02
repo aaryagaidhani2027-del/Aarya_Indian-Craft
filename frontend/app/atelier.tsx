@@ -32,28 +32,230 @@ type Options = {
 
 const CATS = [
   { key: "silhouette", label: "Silhouette", src: "silhouettes" },
-  { key: "quilt", label: "Quilt", src: "quilts" },
+  { key: "quilt", label: "Technique", src: "quilts" },
   { key: "colour", label: "Colour", src: "colours" },
   { key: "craft", label: "Craft", src: "craft_intensity" },
   { key: "personal", label: "Detail", src: "personal_details" },
 ] as const;
 
-// Each craft speaks its own pattern vocabulary — the Atelier adapts to the
-// selected product's craft (same underlying ids keep pricing/made-ability valid).
-const PATTERN_LABELS: Record<string, Record<string, string>> = {
-  Ajrakh: { tab: "Block", geometric: "Trellis", patchwork: "Panel", abstract: "Scatter", organic: "Vine" },
-  Kantha: { tab: "Stitch", geometric: "Running", patchwork: "Dense", abstract: "Free", organic: "Sparse" },
-  Kalamkari: { tab: "Motif", geometric: "Border", patchwork: "Panel", abstract: "Narrative", organic: "Floral" },
+// ---------------------------------------------------------------------------
+// CRAFT-SPECIFIC LABELS
+// ---------------------------------------------------------------------------
+// Each craft speaks its own vocabulary for the same underlying quilt option.
+// The Atelier adapts to the selected product's craft while keeping the same
+// internal ids so pricing and made-ability remain valid.
+const CRAFT_LABELS: Record<string, Record<string, string>> = {
+  Quilting: { tab: "Pattern", geometric: "Geometric", patchwork: "Patchwork", abstract: "Abstract", organic: "Organic" },
+  Ajrakh: { tab: "Block Print", geometric: "Fine Geometry", patchwork: "Dense Border", abstract: "Scattered Motif", organic: "Large Repeat" },
+  Kantha: { tab: "Stitch", geometric: "Running Stitch", patchwork: "Dense Stitch", abstract: "Free Stitch", organic: "Narrative Stitch" },
 };
 
-const COLOUR_IMAGE: Record<string, string> = {
-  ivory: "hero_male",
-  sand: "hero_male",
-  indigo: "hero_female",
-  black: "jacket_front",
-  rust: "jacket_reverse",  olive: "jacket_reverse",
+// ---------------------------------------------------------------------------
+// VISUAL CUSTOMISATION — preview images mapped to colour × craft combinations
+// ---------------------------------------------------------------------------
+// Uses existing generated assets. Colour hex wash is applied as a subtle tint.
+const PREVIEW_IMAGES: Record<string, Record<string, string>> = {
+  Quilting: {
+    ivory: "quilt_still",
+    sand: "quilt_women",
+    indigo: "quilt_men",
+    black: "jacket_front",
+    rust: "jacket_reverse",
+    olive: "patchwork_overshirt_unisex",
+  },
+  Ajrakh: {
+    ivory: "ajrakh_texture",
+    sand: "ajrakh_texture",
+    indigo: "ajrakh_overshirt_men",
+    black: "ajrakh_box_women",
+    rust: "ajrakh_long_unisex",
+    olive: "ajrakh_texture",
+  },
+  Kantha: {
+    ivory: "kantha_overshirt_women",
+    sand: "kantha_wrap_women",
+    indigo: "kantha_workjacket_men",
+    black: "kantha_workjacket_men",
+    rust: "kantha_texture",
+    olive: "kantha_texture",
+  },
 };
 
+const COLOUR_TINT_OVERLAY: Record<string, number> = {
+  black: 0.3,
+  rust: 0.08,
+};
+
+// ---------------------------------------------------------------------------
+// PREMIUM MADE-ABILITY
+// ---------------------------------------------------------------------------
+function MadeAbilityCard({
+  score,
+  makeable,
+  conflicts,
+  techniqueLabel,
+  craftType,
+  productionDays,
+  onFix,
+}: {
+  score: number;
+  makeable: boolean;
+  conflicts: { message: string; fix: Partial<Selection>; fix_label: string }[];
+  techniqueLabel?: string;
+  craftType?: string;
+  productionDays?: number;
+  onFix?: (fix: Partial<Selection>) => void;
+}) {
+  if (makeable) {
+    return (
+      <View style={maStyles.card} testID="madeability-card">
+        <Text style={maStyles.statusLabel}>YOUR DESIGN CAN BE MADE</Text>
+        <View style={maStyles.scoreRow}>
+          <Text style={maStyles.scoreBig} testID="madeability-score">{score}%</Text>
+          <View style={maStyles.scoreLine} />
+        </View>
+        <View style={maStyles.details}>
+          <View style={maStyles.detailRow}>
+            <Text style={maStyles.detailKey}>Craft</Text>
+            <Text style={maStyles.detailVal}>{craftType || "Hand quilting"}</Text>
+          </View>
+          <View style={maStyles.detailRow}>
+            <Text style={maStyles.detailKey}>Technique</Text>
+            <Text style={maStyles.detailVal}>{techniqueLabel || "Hand finishing"}</Text>
+          </View>
+          <View style={maStyles.detailRow}>
+            <Text style={maStyles.detailKey}>Material</Text>
+            <Text style={maStyles.detailVal}>Handloom cotton</Text>
+          </View>
+          <View style={maStyles.detailRow}>
+            <Text style={maStyles.detailKey}>Estimated production</Text>
+            <Text style={maStyles.detailVal}>{productionDays || 21} days</Text>
+          </View>
+          <View style={maStyles.detailRow}>
+            <Text style={maStyles.detailKey}>Made in</Text>
+            <Text style={maStyles.detailVal}>India</Text>
+          </View>
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <View style={[maStyles.card, maStyles.cardWarning]} testID="madeability-card-infeasible">
+      <Text style={maStyles.statusLabelWarning}>NOT QUITE YET</Text>
+      <View style={maStyles.scoreRow}>
+        <Text style={[maStyles.scoreBig, { color: colors.warning }]} testID="madeability-score">{score}%</Text>
+        <View style={[maStyles.scoreLine, { backgroundColor: colors.warning }]} />
+      </View>
+      {conflicts.map((c, i) => (
+        <View key={i} style={maStyles.conflictBlock}>
+          <Text style={maStyles.conflictMsg}>{c.message}</Text>
+          <Pressable
+            testID="let-ai-fix-it"
+            onPress={() => onFix?.(c.fix)}
+            style={({ pressed }) => [maStyles.fixBtn, pressed && { opacity: 0.85 }]}
+          >
+            <Feather name="zap" size={14} color={colors.onSurfaceInverse} />
+            <Text style={maStyles.fixText}>LET THE ATELIER FIX IT</Text>
+          </Pressable>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+const maStyles = StyleSheet.create({
+  card: {
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.md,
+    padding: spacing.lg,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  cardWarning: {
+    borderColor: colors.warning,
+  },
+  statusLabel: {
+    fontFamily: fonts.sansMedium,
+    fontSize: 11,
+    letterSpacing: 2.5,
+    color: colors.success,
+  },
+  statusLabelWarning: {
+    fontFamily: fonts.sansMedium,
+    fontSize: 11,
+    letterSpacing: 2.5,
+    color: colors.warning,
+  },
+  scoreRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    marginTop: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  scoreBig: {
+    fontFamily: fonts.sansBlack,
+    fontSize: 40,
+    letterSpacing: -1,
+    color: colors.onSurface,
+  },
+  scoreLine: {
+    flex: 1,
+    height: 2,
+    backgroundColor: colors.success,
+  },
+  details: {
+    gap: 0,
+  },
+  detailRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.divider,
+  },
+  detailKey: {
+    fontFamily: fonts.sans,
+    fontSize: 13,
+    color: colors.onSurfaceTertiary,
+  },
+  detailVal: {
+    fontFamily: fonts.sansMedium,
+    fontSize: 13,
+    color: colors.onSurface,
+  },
+  conflictBlock: {
+    marginTop: spacing.md,
+  },
+  conflictMsg: {
+    fontFamily: fonts.sans,
+    fontSize: 14,
+    lineHeight: 21,
+    color: colors.onSurfaceSecondary,
+    marginBottom: spacing.md,
+  },
+  fixBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    backgroundColor: colors.brand,
+    alignSelf: "flex-start",
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+  },
+  fixText: {
+    fontFamily: fonts.sansMedium,
+    fontSize: 12,
+    letterSpacing: 1.5,
+    color: colors.onSurfaceInverse,
+  },
+});
+
+// ---------------------------------------------------------------------------
+// MAIN ATELIER COMPONENT
+// ---------------------------------------------------------------------------
 export default function Atelier() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -64,7 +266,10 @@ export default function Atelier() {
   const [activeCat, setActiveCat] = useState<(typeof CATS)[number]["key"]>("silhouette");
   const [result, setResult] = useState<ComputeResult | null>(null);
   const [computing, setComputing] = useState(false);
-  const meter = useRef(new Animated.Value(0)).current;
+
+  // Image crossfade animation
+  const imageOpacity = useRef(new Animated.Value(1)).current;
+  const prevImageRef = useRef<string | null>(null);
 
   const loadOptions = () => {
     setOptionsError(false);
@@ -80,7 +285,7 @@ export default function Atelier() {
     loadOptions();
   }, []);
 
-  // recompute (debounced) whenever selection changes
+  // Recompute (debounced) whenever selection changes
   useEffect(() => {
     setComputing(true);
     const t = setTimeout(() => {
@@ -89,17 +294,12 @@ export default function Atelier() {
         .then((r: ComputeResult) => {
           setResult(r);
           setCompute(r);
-          Animated.timing(meter, {
-            toValue: r.madeability.score / 100,
-            duration: 500,
-            useNativeDriver: false,
-          }).start();
         })
         .catch(() => {})
         .finally(() => setComputing(false));
     }, 200);
     return () => clearTimeout(t);
-  }, [selection, setCompute, meter]);
+  }, [selection, setCompute]);
 
   const update = (key: keyof Selection, value: string) => {
     Haptics.selectionAsync();
@@ -111,12 +311,35 @@ export default function Atelier() {
     setSelection({ ...selection, ...fix });
   };
 
-  const colourImg = useMemo(
-    () => COLOUR_IMAGE[selection.colour] ?? "jacket_front",
-    [selection.colour]
-  );
-  const colourHex =
-    options?.colours.find((c) => c.id === selection.colour)?.hex ?? "#1C1C1A";
+  // Craft-specific labels
+  const craftType = activeJacket?.craft_type ?? "Quilting";
+  const craftLabels = CRAFT_LABELS[craftType] ?? CRAFT_LABELS.Quilting;
+
+  // Preview image: mapped to colour × craft
+  const previewImage = useMemo(() => {
+    const craftMap = PREVIEW_IMAGES[craftType] ?? PREVIEW_IMAGES.Quilting;
+    return craftMap[selection.colour] ?? "quilt_still";
+  }, [selection.colour, craftType]);
+
+  // Crossfade when preview image changes
+  useEffect(() => {
+    if (prevImageRef.current && prevImageRef.current !== previewImage) {
+      imageOpacity.setValue(0);
+      Animated.timing(imageOpacity, {
+        toValue: 1,
+        duration: 350,
+        useNativeDriver: true,
+      }).start();
+    }
+    prevImageRef.current = previewImage;
+  }, [previewImage, imageOpacity]);
+
+  const colourObj = options?.colours.find((c) => c.id === selection.colour);
+  const colourHex = colourObj?.hex ?? "#1C1C1A";
+  const tintOpacity = COLOUR_TINT_OVERLAY[selection.colour] ?? 0.08;
+
+  const made = result?.madeability;
+  const enhancedMade = made as any;
 
   if (!options) {
     return (
@@ -135,75 +358,65 @@ export default function Atelier() {
 
   const currentCat = CATS.find((c) => c.key === activeCat)!;
   const currentOpts = options[currentCat.src as keyof Options] as Opt[];
-  const patternMap = PATTERN_LABELS[activeJacket?.craft_type ?? ""];
-  const made = result?.madeability;
-  const conflict = made?.conflicts?.[0];
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
       <BackHeader title="The Atelier" />
 
-      {/* Jacket visual */}
+      {/* Jacket visual with crossfade */}
       <View style={styles.visual}>
-        <Image
-          source={{ uri: media(colourImg) }}
-          style={StyleSheet.absoluteFill}
-          contentFit="cover"
-          transition={400}
-        />
-        {/* colour wash to hint tone change */}
-        <View style={[StyleSheet.absoluteFill, { backgroundColor: colourHex, opacity: 0.16 }]} />
+        <Animated.View style={[StyleSheet.absoluteFill, { opacity: imageOpacity }]}>
+          <Image
+            source={{ uri: media(previewImage) }}
+            style={StyleSheet.absoluteFill}
+            contentFit="cover"
+            transition={0}
+          />
+        </Animated.View>
+        {/* Colour tint wash */}
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: colourHex, opacity: tintOpacity }]} />
         <LinearGradient
           colors={["rgba(28,28,26,0)", "rgba(28,28,26,0.55)"]}
           style={StyleSheet.absoluteFill}
         />
+
+        {/* Active selection tags */}
         <View style={styles.visualTags}>
           <Text style={styles.visualTag}>{selection.silhouette.toUpperCase()}</Text>
           <Text style={styles.visualDot}>·</Text>
-          <Text style={styles.visualTag}>{selection.quilt.toUpperCase()}</Text>
+          <Text style={styles.visualTag}>
+            {(craftLabels as any)[selection.quilt] ?? selection.quilt.toUpperCase()}
+          </Text>
           <Text style={styles.visualDot}>·</Text>
           <Text style={styles.visualTag}>{selection.craft.toUpperCase()}</Text>
         </View>
 
+        {/* Monogram */}
         {selection.personal !== "none" && selection.personal_value ? (
           <View style={styles.monogram}>
             <Text style={styles.monogramText}>{selection.personal_value}</Text>
           </View>
         ) : null}
 
-        {/* Made-ability meter */}
-        <View style={styles.meterWrap}>
-          <View style={styles.meterHeader}>
-            <Text style={styles.meterLabel}>MADE-ABILITY</Text>
-            <Text
-              testID="madeability-score"
-              style={[styles.meterScore, { color: made && !made.makeable ? colors.warning : colors.onSurfaceInverse }]}
-            >
-              {made ? `${made.score}%` : "—"}
-            </Text>
-          </View>
-          <View style={styles.meterTrack}>
-            <Animated.View
-              style={[
-                styles.meterFill,
-                {
-                  width: meter.interpolate({ inputRange: [0, 1], outputRange: ["0%", "100%"] }),
-                  backgroundColor: made && !made.makeable ? colors.warning : colors.onSurfaceInverse,
-                },
-              ]}
+        {/* Made-ability — premium card at bottom of visual */}
+        {made && (
+          <View style={styles.meterWrap}>
+            <MadeAbilityCard
+              score={made.score}
+              makeable={made.makeable}
+              conflicts={made.conflicts}
+              techniqueLabel={enhancedMade?.technique_label}
+              craftType={enhancedMade?.craft_type}
+              productionDays={enhancedMade?.production_days}
+              onFix={applyFix}
             />
           </View>
-          <Text style={styles.meterCopy} testID="madeability-copy">
-            {made && !made.makeable
-              ? "This combination pushes past our current craft capabilities."
-              : "Your design fits our current craft and production capabilities."}
-          </Text>
-        </View>
+        )}
       </View>
 
       {/* Controls */}
       <View style={styles.panel}>
-        {/* category tabs */}
+        {/* Category tabs — craft-specific labels */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -212,6 +425,7 @@ export default function Atelier() {
         >
           {CATS.map((c) => {
             const on = c.key === activeCat;
+            const tabLabel = c.key === "quilt" ? craftLabels.tab : c.label;
             return (
               <Pressable
                 key={c.key}
@@ -220,7 +434,7 @@ export default function Atelier() {
                 style={styles.catTab}
               >
                 <Text style={[styles.catText, { color: on ? colors.onSurface : colors.onSurfaceTertiary }]}>
-                  {c.key === "quilt" && patternMap ? patternMap.tab : c.label}
+                  {tabLabel}
                 </Text>
                 {on ? <View style={styles.catUnderline} /> : null}
               </Pressable>
@@ -229,7 +443,7 @@ export default function Atelier() {
         </ScrollView>
 
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: spacing.md }}>
-          {/* swatches */}
+          {/* Swatches — craft-specific labels for quilt options */}
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -238,7 +452,9 @@ export default function Atelier() {
             {currentOpts.map((o) => {
               const on = (selection as any)[activeCat] === o.id;
               const isColour = activeCat === "colour";
-              const optLabel = activeCat === "quilt" && patternMap ? patternMap[o.id] ?? o.label : o.label;
+              const optLabel = activeCat === "quilt"
+                ? (craftLabels as any)[o.id] ?? o.label
+                : o.label;
               return (
                 <Pressable
                   key={o.id}
@@ -272,7 +488,7 @@ export default function Atelier() {
             })}
           </ScrollView>
 
-          {/* personal detail input */}
+          {/* Personal detail input */}
           {activeCat === "personal" && selection.personal !== "none" ? (
             <View style={styles.inputWrap}>
               <TextInput
@@ -295,26 +511,13 @@ export default function Atelier() {
             </View>
           ) : null}
 
-          {/* Conflict / AI fix */}
-          {conflict ? (
-            <View style={styles.conflict} testID="madeability-conflict">
-              <Text style={styles.conflictTitle}>A small conflict</Text>
-              <Text style={styles.conflictBody}>{conflict.message}</Text>
-              <Pressable
-                testID="let-ai-fix-it"
-                onPress={() => applyFix(conflict.fix)}
-                style={({ pressed }) => [styles.fixBtn, pressed && { opacity: 0.85 }]}
-              >
-                <Feather name="zap" size={14} color={colors.onSurfaceInverse} />
-                <Text style={styles.fixText}>LET AI FIX IT</Text>
-              </Pressable>
-            </View>
-          ) : (
+          {/* Editorial copy (when no conflicts) */}
+          {!made?.conflicts?.length ? (
             <View style={styles.editorialBlock} testID="ai-editorial">
               <Eyebrow text="The design moment" />
               <Text style={styles.editorial}>{result?.editorial}</Text>
             </View>
-          )}
+          ) : null}
         </ScrollView>
 
         {/* Sticky footer */}
@@ -376,12 +579,6 @@ const styles = StyleSheet.create({
   },
   monogramText: { fontFamily: fonts.displayMedium, fontSize: 22, color: colors.onSurfaceInverse },
   meterWrap: { padding: spacing.lg },
-  meterHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", marginBottom: spacing.sm },
-  meterLabel: { fontFamily: fonts.sansMedium, fontSize: 12, letterSpacing: 2.5, color: "rgba(251,251,249,0.9)" },
-  meterScore: { fontFamily: fonts.sansBold, fontSize: 24, letterSpacing: 0.5 },
-  meterTrack: { height: 2, backgroundColor: "rgba(251,251,249,0.25)" },
-  meterFill: { height: 2 },
-  meterCopy: { fontFamily: fonts.sans, fontSize: 12, lineHeight: 17, color: "rgba(251,251,249,0.8)", marginTop: spacing.sm },
   panel: { flex: 1, backgroundColor: colors.surface },
   catRow: { flexGrow: 0, borderBottomWidth: 1, borderBottomColor: colors.divider },
   catContent: { paddingHorizontal: spacing.lg, gap: spacing.xl, alignItems: "center", height: 52 },
@@ -426,28 +623,6 @@ const styles = StyleSheet.create({
     color: colors.onSurface,
     letterSpacing: 1,
   },
-  conflict: {
-    marginHorizontal: spacing.lg,
-    marginTop: spacing.sm,
-    padding: spacing.lg,
-    backgroundColor: colors.surfaceSecondary,
-    borderLeftWidth: 2,
-    borderLeftColor: colors.warning,
-    gap: spacing.sm,
-  },
-  conflictTitle: { fontFamily: fonts.sansMedium, fontSize: 12, letterSpacing: 1.5, color: colors.warning },
-  conflictBody: { fontFamily: fonts.sans, fontSize: 14, lineHeight: 21, color: colors.onSurfaceSecondary },
-  fixBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    backgroundColor: colors.brand,
-    alignSelf: "flex-start",
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    marginTop: spacing.xs,
-  },
-  fixText: { fontFamily: fonts.sansMedium, fontSize: 12, letterSpacing: 1.5, color: colors.onSurfaceInverse },
   editorialBlock: {
     marginHorizontal: spacing.lg,
     marginTop: spacing.sm,

@@ -151,8 +151,10 @@ def _validated_ai_dna(ai_result: dict, answers: Dict[str, str]) -> Optional[dict
                        for o in q["options"] if o["id"] == answers.get("silhouette")), "Layered")
 
     # Preserve the response shape consumed by the existing Expo result screen.
+    # profile_key maps to the deterministic DNA_PROFILES id for craft-explanation lookup.
     return {
         "id": "ai_translated",
+        "profile_key": "ai_translated",
         "name": profile_name.strip().upper(),
         "description": profile_description.strip(),
         "palette": palette,
@@ -231,6 +233,24 @@ async def _compute_ai_dna(answers: Dict[str, str]) -> Optional[dict]:
     except Exception as exc:
         logger.warning("Design DNA AI fallback after request failure: %s", type(exc).__name__)
         return None
+
+
+# --------------------------------------------------------------------------- #
+# Why This Craft? — deterministic craft explanation from DNA result
+# --------------------------------------------------------------------------- #
+class CraftExplanationRequest(BaseModel):
+    profile_id: str
+    craft: str
+
+
+@api_router.post("/dna/craft-explanation")
+async def dna_craft_explanation(req: CraftExplanationRequest):
+    explanation = design.get_craft_explanation(req.profile_id, req.craft)
+    return {
+        "craft": req.craft,
+        "explanation": explanation,
+        "craft_story_label": f"See the {req.craft.lower()} craft \u2192",
+    }
 
 
 class VisualiseRequest(BaseModel):
@@ -321,7 +341,7 @@ async def atelier_options():
 async def atelier_compute(selection: AtelierSelection):
     sel = selection.dict()
     price = design.compute_price(sel)
-    made = design.compute_madeability(sel)
+    made = design.compute_enhanced_madeability(sel)
     editorial = design.compose_editorial(sel)
     return {"price": price, "madeability": made, "editorial": editorial, "selection": sel}
 

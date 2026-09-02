@@ -40,7 +40,7 @@ const PALETTE_DOTS: Record<string, string> = {
 export default function Dna() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { setDna } = useDesign();
+  const { setDna, setProfileId } = useDesign();
 
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loadError, setLoadError] = useState(false);
@@ -103,6 +103,7 @@ export default function Dna() {
         try {
           const result = await api.post("/dna/result", { answers: next });
           setDna(result);
+          setProfileId(result.profile_key ?? null);
           setTimeout(() => router.replace("/dna-result"), 1850);
         } catch {
           setSubmitting(false);
